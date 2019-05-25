@@ -74,6 +74,12 @@ def accuracy_metric(Y_predictions, Y_actual):
 		if Y_actual[i] == 0 and Y_predictions[i] == 1:
 			false_positives += 1
 
-	print("Correctly Predicted Proportion : " + str((true_positives + true_negatives) / len(Y_actual)))
-	print("Precision : " + str(true_positives / (true_positives + true_negatives)))
-	print("Recall : " + str(true_positives / (true_positives + false_negatives)))
+	accuracy = (true_positives + true_negatives) / len(Y_actual)
+	precision = true_positives / (true_positives + true_negatives)
+	recall = true_positives / (true_positives + false_negatives)
+	F1 = 2 * (precision * recall) / (precision + recall)
+
+	print("Correctly Predicted Proportion : " + str(accuracy))
+	print("Precision : " + str(precision))
+	print("Recall : " + str(recall))
+	print("F1 : " + str(F1))
