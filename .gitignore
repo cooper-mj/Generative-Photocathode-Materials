@@ -2,4 +2,8 @@ data/
 unit_cell_data.csv
 emittance_labels.csv
 env/
+<<<<<<< HEAD
 .DS_Store
+=======
+.DS_Store
+>>>>>>> fa6b1a0be4880bc8c8d0bbb82fa59deeeb246d49
