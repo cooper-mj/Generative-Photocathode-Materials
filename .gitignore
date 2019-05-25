@@ -3,3 +3,4 @@ unit_cell_data.csv
 emittance_labels.csv
 env/
 .DS_Store
+__pycache__/

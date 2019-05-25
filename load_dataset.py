@@ -34,21 +34,26 @@ def load_dataset(threshold=0.2):
 	@param tup: tuple of MPIs, X's, Y's as returned by load_dataset
 	@return tuple of numpy arrays for training, validation, and test sets
 '''
-def split_data(tup):
+def split_data(tup, train_split = 0.6, valid_split = 0.2, test_split = 0.2):
 
 	MPIDs, X, Y = tup
 
-	X_train = X[:int(len(X)*0.6)]
-	Y_train = Y[:int(len(Y)*0.6)]
-	MPIDs_train = MPIDs[:int(len(MPIDs)*0.6)]
+	assert (train_split + valid_split + test_split == 1),"The proportion of data dedicated to train, validation, and test sets does not sum to 1."
 
-	X_valid = X[int(len(X)*0.6):int(len(X)*0.8)]
-	Y_valid = Y[int(len(Y)*0.6):int(len(X)*0.8)]
-	MPIDs_valid = MPIDs[int(len(MPIDs)*0.6):int(len(X)*0.8)]
+	training_threshold = train_split
+	valid_threshold = train_split + valid_split
 
-	X_test = X[int(len(X)*0.8):]
-	Y_test = Y[int(len(Y)*0.8):]
-	MPIDs_test = MPIDs[int(len(MPIDs)*0.8):]
+	X_train = X[:int(len(X)*training_threshold)]
+	Y_train = Y[:int(len(Y)*training_threshold)]
+	MPIDs_train = MPIDs[:int(len(MPIDs)*training_threshold)]
+
+	X_valid = X[int(len(X)*training_threshold):int(len(X)*valid_threshold)]
+	Y_valid = Y[int(len(Y)*training_threshold):int(len(X)*valid_threshold)]
+	MPIDs_valid = MPIDs[int(len(MPIDs)*training_threshold):int(len(X)*valid_threshold)]
+
+	X_test = X[int(len(X)*valid_threshold):]
+	Y_test = Y[int(len(Y)*valid_threshold):]
+	MPIDs_test = MPIDs[int(len(MPIDs)*valid_threshold):]
 
 	return (X_train, Y_train, MPIDs_train, X_valid, Y_valid, MPIDs_valid, X_test, Y_test, MPIDs_test)
 
