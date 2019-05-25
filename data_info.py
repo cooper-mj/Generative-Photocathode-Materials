@@ -18,3 +18,13 @@ if __name__ == "__main__":
         col_arr = np.array(total[col_name])
         num_elem_i = np.sum(col_arr > 0)
         print("Num elem " + str(i) + ": " + str(num_elem_i))
+
+    Y_arr = np.array(total["min emittance"])
+    pos_exps = np.sum(Y_arr <= 0.2)
+    print("Num pos exps (<= 0.2): " + str(pos_exps))
+
+    X_train, Y_train, MPIDs_train, X_valid, Y_valid, MPIDs_valid, X_test, Y_test, MPIDs_test = split_data(load_dataset(0.2))
+
+    print("Training set information:")
+    print("Positive examples: " + str(sum(Y_train)))
+    print("Negative examples: " + str(len(Y_train) - sum(Y_train)))
