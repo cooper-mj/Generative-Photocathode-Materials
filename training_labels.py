@@ -19,6 +19,7 @@ info_all_materials = []
 
 for i in range(NUM_MATERIALS):
 # for i in range(5): # USE THIS IF YOU JUST WANT TO TEST IT OUT
+	print ("Iteration " + str(i + 1) + "/10000")
 	material_info = np.zeros(len(info))
 
 	material = materials_codes[i].rstrip()
@@ -27,7 +28,7 @@ for i in range(NUM_MATERIALS):
 
 	try:
 		emittance = np.loadtxt(path + emittance_file + str(i) + ".txt")[1:]
-	except ValueError:
+	except:
 		print("Unable to read file " + path + emittance_file + str(i) + ".txt")
 		material_info[1] = NO_EMITTANCE
 		info_all_materials.append(material_info)
