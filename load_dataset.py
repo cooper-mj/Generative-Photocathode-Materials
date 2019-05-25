@@ -1,16 +1,15 @@
-THRESHOLD = 0.4
-
 from numpy import genfromtxt
 import numpy as np
 import pandas as pd
 
-def load_dataset():
-	# Add code here to pull the dataset
-	
-	# Get labels
-	
+''' load_dataset: Loads and merges cleaned-up data
+	@param threshold: emittance threshold below which a data point is considered positive example
+		Set threshold = -1 for non-binary models
+	@return tuple of numpy arrays for MPIDs, features, and labels
+'''
+def load_dataset(threshold=0.2):
+	# Get data	
 	Y_full = pd.read_csv('emittance_labels.csv')
-
 	X_full = pd.read_csv('unit_cell_data.csv')
 
 	total = pd.merge(X_full, Y_full, on="MPID")
@@ -22,12 +21,19 @@ def load_dataset():
 
 	X = np.array(total.iloc[:, 1:48])
 
+	# print(X)
 	Y = np.array(total[["min emittance"]])
+	# print(Y)
 
-	Y = [1 if y_i < THRESHOLD else 0 for y_i in Y]
+	if threshold != -1:
+		Y = [1 if y_i < threshold else 0 for y_i in Y]
+
 	return (MPIDs, X, Y)
 
-
+''' load_dataset: Loads and merges cleaned-up data
+	@param tup: tuple of MPIs, X's, Y's as returned by load_dataset
+	@return tuple of numpy arrays for training, validation, and test sets
+'''
 def split_data(tup):
 
 	MPIDs, X, Y = tup
