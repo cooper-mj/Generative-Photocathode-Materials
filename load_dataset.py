@@ -8,7 +8,7 @@ import pandas as pd
 	@return tuple of numpy arrays for MPIDs, features, and labels
 '''
 def load_dataset(threshold=0.2):
-	# Get data	
+	# Get data
 	Y_full = pd.read_csv('emittance_labels.csv')
 	X_full = pd.read_csv('unit_cell_data.csv')
 
@@ -26,7 +26,7 @@ def load_dataset(threshold=0.2):
 	# print(Y)
 
 	if threshold != -1:
-		Y = [1 if y_i < threshold else 0 for y_i in Y]
+		Y = [1 if y_i <= threshold else 0 for y_i in Y]
 
 	return (MPIDs, X, Y)
 
@@ -76,5 +76,3 @@ def accuracy_metric(Y_predictions, Y_actual):
 	print("Correctly Predicted Proportion : " + str((true_positives + true_negatives) / len(Y_actual)))
 	print("Precision : " + str(true_positives / (true_positives + true_negatives)))
 	print("Recall : " + str(true_positives / (true_positives + false_negatives)))
-
-
