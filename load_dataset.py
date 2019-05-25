@@ -15,14 +15,15 @@ def load_dataset(threshold=0.2):
 	total = pd.merge(X_full, Y_full, on="MPID")
 
 	# Random state below is a seed - change this when we go to run for real
-	total = total.sample(frac=1, random_state=229).reset_index(drop=True)
+	total = np.array(total.sample(frac=1, random_state=229).reset_index(drop=True))
+	total = np.array([total[i] for i in range(len(total)) if total[i, 48] != float('inf')])
 
-	MPIDs = np.array(total[['MPID']])
+	MPIDs = np.array(total[:, 0])
 
-	X = np.array(total.iloc[:, 1:48])
+	X = np.array(total[:, 1:48])
 
 	# print(X)
-	Y = np.array(total[["min emittance"]])
+	Y = np.array(total[:, 48])
 	# print(Y)
 
 	if threshold != -1:
