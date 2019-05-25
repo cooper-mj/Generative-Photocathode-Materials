@@ -15,16 +15,16 @@ api_key = "TsOqaHtJ0LRPqf5jL2Hn"
 
 output_path = "data/unit_cell_data.csv"
 
-features = ["MPID" , 
+features = ["MPID" ,
 			"a", "b", "c", "alpha", "beta", "gamma", "volume",	  # unit cell params
 			"elem0", "a0", "b0", "c0", "elem1", "a1", "b1", "c1", # species params
 			"elem2", "a2", "b2", "c2", "elem3", "a3", "b3", "c3",
 			"elem4", "a4", "b4", "c4", "elem5", "a5", "b5", "c5",
 			"elem6", "a6", "b6", "c6", "elem7", "a7", "b7", "c7",
-			"elem8", "a8", "b8", "c8", "elem9", "a9", "b9", "c9"] 
+			"elem8", "a8", "b8", "c8", "elem9", "a9", "b9", "c9"]
 
 # features = ["MPID", "a", "b", "c", "alpha", "beta", "gamma", "volume",	  # unit cell params
-# 			"elem0", "a0", "b0", "c0", "elem1", "a1", "b1", "c1"] 
+# 			"elem0", "a0", "b0", "c0", "elem1", "a1", "b1", "c1"]
 
 features_all_elements = []
 
@@ -32,13 +32,13 @@ i = 0
 for code in materials_codes:
 	material = code.rstrip() # Add a string for it
 	url = url_base + material + url_tail + api_key
-        print("Iteration " + str(i + 1) + "/10000")
+    print("Iteration " + str(i + 1) + "/10000")
 
 	response = requests.get(url)
 	data = response.json()
 	if len(data["response"]) == 0: # No data for this material available
 		continue
-	
+
 	material_features = np.zeros(len(features))
 	material_features[0] = float(code[3:])
 
@@ -49,7 +49,7 @@ for code in materials_codes:
 	for unit_cell_param in features[1:UNIT_CELL_PARAMS + 1]:
 		material_features[feat] = curr_data["lattice"][unit_cell_param]
 		feat += 1
-	
+
 	# Collecting sites-related features (atom type, coordinates)
 	curr_sites_data = curr_data["sites"]
 	spec = 0
