@@ -32,7 +32,8 @@ i = 0
 for code in materials_codes:
 	material = code.rstrip() # Add a string for it
 	url = url_base + material + url_tail + api_key
-    print("Iteration " + str(i + 1) + "/10000")
+	
+	print("Iteration " + str(i + 1) + "/10000")
 
 	response = requests.get(url)
 	data = response.json()
