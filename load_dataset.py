@@ -34,21 +34,21 @@ def load_dataset(threshold=0.2):
 	@param tup: tuple of MPIs, X's, Y's as returned by load_dataset
 	@return tuple of numpy arrays for training, validation, and test sets
 '''
-def split_data(tup, training_prop = 0.6, valid_prop = 0.2, test_prop = 0.2):
+def split_data(tup, training_threshold = 0.6, valid_threshold = 0.8):
 
 	MPIDs, X, Y = tup
 
-	X_train = X[:int(len(X)*training_prop)]
-	Y_train = Y[:int(len(Y)*training_prop)]
-	MPIDs_train = MPIDs[:int(len(MPIDs)*training_prop)]
+	X_train = X[:int(len(X)*training_threshold)]
+	Y_train = Y[:int(len(Y)*training_threshold)]
+	MPIDs_train = MPIDs[:int(len(MPIDs)*training_threshold)]
 
-	X_valid = X[int(len(X)*training_prop):int(len(X)*valid_prop)]
-	Y_valid = Y[int(len(Y)*training_prop):int(len(X)*valid_prop)]
-	MPIDs_valid = MPIDs[int(len(MPIDs)*training_prop):int(len(X)*valid_prop)]
+	X_valid = X[int(len(X)*training_threshold):int(len(X)*valid_threshold)]
+	Y_valid = Y[int(len(Y)*training_threshold):int(len(X)*valid_threshold)]
+	MPIDs_valid = MPIDs[int(len(MPIDs)*training_threshold):int(len(X)*valid_threshold)]
 
-	X_test = X[int(len(X)*valid_prop):]
-	Y_test = Y[int(len(Y)*valid_prop):]
-	MPIDs_test = MPIDs[int(len(MPIDs)*valid_prop):]
+	X_test = X[int(len(X)*valid_threshold):]
+	Y_test = Y[int(len(Y)*valid_threshold):]
+	MPIDs_test = MPIDs[int(len(MPIDs)*valid_threshold):]
 
 	return (X_train, Y_train, MPIDs_train, X_valid, Y_valid, MPIDs_valid, X_test, Y_test, MPIDs_test)
 
