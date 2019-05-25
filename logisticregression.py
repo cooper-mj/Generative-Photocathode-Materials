@@ -9,7 +9,7 @@ import numpy as np
 
 if __name__ == "__main__":
 
-	X_train, Y_train, MPIDs_train, X_valid, Y_valid, MPIDs_valid, X_test, Y_test, MPIDs_test = split_data(load_dataset())
+	X_train, Y_train, MPIDs_train, X_valid, Y_valid, MPIDs_valid, X_test, Y_test, MPIDs_test = split_data(load_dataset(0.2))
 
 	print("Training set information:")
 	print("Positive examples: " + str(sum(Y_train)))
