@@ -34,9 +34,14 @@ def load_dataset(threshold=0.2):
 	@param tup: tuple of MPIs, X's, Y's as returned by load_dataset
 	@return tuple of numpy arrays for training, validation, and test sets
 '''
-def split_data(tup, training_threshold = 0.6, valid_threshold = 0.8):
+def split_data(tup, train_split = 0.6, valid_split = 0.2, test_split = 0.2):
 
 	MPIDs, X, Y = tup
+
+	assert (train_split + valid_split + test_split == 1),"The proportion of data dedicated to train, validation, and test sets does not sum to 1."
+
+	training_threshold = train_split
+	valid_threshold = train_split + valid_split
 
 	X_train = X[:int(len(X)*training_threshold)]
 	Y_train = Y[:int(len(Y)*training_threshold)]
