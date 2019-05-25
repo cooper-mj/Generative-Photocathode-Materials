@@ -1,28 +1,15 @@
 
 from sklearn.linear_model import LogisticRegression
-from numpy import genfromtxt
-import numpy as np
 
-
-def load_dataset():
-	# Add code here to pull the dataset
-	
-	# Get labels
-	Y_full = genfromtxt('emittance_labels.csv', delimiter=',')
-
-	# Remove nan objects at the top
-	Y_full = Y_full[1:]
-
-	# Separate by column
-	Y_labels = Y_full[:,0]
-	Y = Y_full[:,1]
-
-	# Round to the nearest tenth
-	for i in range(len(Y)):
-		Y[i] = round(Y[i], 2)
-
-	return
+from load_dataset import load_dataset
+from load_dataset import split_data
 
 if __name__ == "__main__":
-	load_dataset()
+
+	X_train, Y_train, MPIDs_train, X_valid, Y_valid, MPIDs_valid, X_test, Y_test, MPIDs_test = split_data(load_dataset())
+
+	clf = LogisticRegression(penalty='l2', solver='lbfgs', max_iter = 10000000).fit(X_train, Y_train)
+
+	for example in X_valid:
+		clf.predict()
 
