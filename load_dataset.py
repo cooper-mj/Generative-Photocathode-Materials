@@ -10,7 +10,7 @@ import pandas as pd
 def load_dataset(threshold=0.2):
 	# Get data
 	Y_full = pd.read_csv('emittance_labels.csv')
-	X_full = pd.read_csv('unit_cell_data.csv')
+	X_full = pd.read_csv('unit_cell_data_16.csv')
 
 	total = pd.merge(X_full, Y_full, on="MPID")
 
