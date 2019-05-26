@@ -15,6 +15,9 @@ if __name__ == "__main__":
 	print("Positive examples: " + str(sum(Y_train)))
 	print("Negative examples: " + str(len(Y_train) - sum(Y_train)))
 
+	print(X_train)
+	print(Y_train)
+
 	clf = LogisticRegression(penalty='l2', solver='lbfgs', max_iter = 10000000).fit(X_train, Y_train)
 
 	Y_valid_predictions = np.zeros(len(Y_valid))
@@ -22,4 +25,3 @@ if __name__ == "__main__":
 		Y_valid_predictions[i] = clf.predict(example.reshape(1, -1))
 
 	accuracy_metric(Y_valid_predictions, Y_valid)
-

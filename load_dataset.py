@@ -16,15 +16,15 @@ def load_dataset(threshold=0.2):
 
 	# Random state below is a seed - change this when we go to run for real
 	total = np.array(total.sample(frac=1, random_state=229).reset_index(drop=True))
-	total = np.array([total[i] for i in range(len(total)) if total[i, 48] != float('inf')])
+	total = np.array([total[i] for i in range(len(total)) if total[i, 72] != float('inf')])
 
 	MPIDs = np.array(total[:, 0])
 
-	X = np.array(total[:, 1:48])
+	X = np.array(total[:, 1:72])
 
 	# print(X)
-	Y = np.array(total[:, 48])
-	# print(Y)
+	Y = np.array(total[:, 72])
+	print(Y)
 
 	if threshold != -1:
 		Y = [1 if y_i <= threshold else 0 for y_i in Y]

@@ -8,13 +8,13 @@ import pandasql as ps
 
 if __name__ == "__main__":
     Y_full = pd.read_csv('emittance_labels.csv')
-    X_full = pd.read_csv('unit_cell_data.csv')
+    X_full = pd.read_csv('unit_cell_data_16.csv')
 
     total = pd.merge(X_full, Y_full, on="MPID")
     total_exps = len(total)
     print("Total Examples: " + str(total_exps))
 
-    for i in range(10):
+    for i in range(16):
         col_name = "elem" + str(i)
         col_arr = np.array(total[col_name])
         num_elem_i = np.sum(col_arr > 0)
