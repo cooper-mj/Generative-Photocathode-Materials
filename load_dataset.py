@@ -21,10 +21,9 @@ def load_dataset(threshold=0.2):
 	MPIDs = np.array(total[:, 0])
 
 	X = np.array(total[:, 1:72])
-
+	# print(len(X[0]))
 	# print(X)
 	Y = np.array(total[:, 72])
-	print(Y)
 
 	if threshold != -1:
 		Y = [1 if y_i <= threshold else 0 for y_i in Y]
