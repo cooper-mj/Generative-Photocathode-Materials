@@ -1,0 +1,23 @@
+Logistic Regression:
+Correctly Predicted Proportion : 0.6260593220338984
+Precision : 0.06429780033840947
+Recall : 0.10644257703081232
+F1 : 0.08016877637130801
+
+SVM:
+Correctly Predicted Proportion : 0.673728813559322
+Precision : 0.10534591194968554
+Recall : 0.1876750700280112
+F1 : 0.13494461228600202
+
+Naive Bayes:
+Correctly Predicted Proportion : 0.551906779661017
+Precision : 0.23032629558541268
+Recall : 0.33613445378151263
+F1 : 0.2733485193621868
+
+Random Forest (100 trees):
+Correctly Predicted Proportion : 0.7330508474576272
+Precision : 0.21820809248554912
+Recall : 0.42296918767507
+F1 : 0.2878932316491897
