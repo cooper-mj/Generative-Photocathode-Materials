@@ -7,10 +7,10 @@ import pandas as pd
 		Set threshold = -1 for non-binary models
 	@return tuple of numpy arrays for MPIDs, features, and labels
 '''
-def load_dataset(threshold=0.2):
+def load_dataset(filename, threshold=0.2):
 	# Get data
 	Y_full = pd.read_csv('emittance_labels.csv')
-	X_full = pd.read_csv('unit_cell_data_16.csv')
+	X_full = pd.read_csv(filename)
 
 	total = pd.merge(X_full, Y_full, on="MPID")
 
@@ -20,10 +20,10 @@ def load_dataset(threshold=0.2):
 
 	MPIDs = np.array(total[:, 0])
 
-	X = np.array(total[:, 1:72])
+	X = np.array(total[:, 1:-1])
 	# print(len(X[0]))
 	# print(X)
-	Y = np.array(total[:, 72])
+	Y = np.array(total[:, -1])
 
 	if threshold != -1:
 		Y = [1 if y_i <= threshold else 0 for y_i in Y]

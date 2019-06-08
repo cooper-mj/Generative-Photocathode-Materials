@@ -1,5 +1,6 @@
 import json
 import requests
+import math
 import pandas as pd
 import numpy as np
 from mendeleev import element
@@ -11,11 +12,13 @@ url_base = "https://www.materialsproject.org/rest/v1/materials/"
 url_tail = "/vasp/pretty_formula?API_KEY="
 api_key = "TsOqaHtJ0LRPqf5jL2Hn"
 
-output_path = "data/unit_cell_data.csv"
-formula_output_path = "data/chemical_formulas.txt"
+output_path = "material_average_data.csv"
+formula_output_path = "chemical_formulas.txt"
 
 # features based on averages over all atoms in the chemical formula
-features = ["MPID", "atomic_number", "atomic_weight", "atomic_radius", "density", "en_pauling", "lattice_constant"]
+features = ["MPID", "Atomic number", "Atomic weight", "Atomic radius", "Density", 
+			"Electronegativity", "Lattice constant", "Polarizability", 
+			"Heat of formation", "Heat of Fusion", "Heat of Vaporization"]
 
 all_formulas = []
 features_all_elements = []
@@ -36,21 +39,26 @@ def extract_features(atoms, materials_features, num_features):
 		feats[1] = elem.atomic_weight
 		feats[2] = elem.atomic_radius
 		feats[3] = elem.density
-		feats[4] = elem.en_pauling
-		feats[5] = elem.lattice_constant
+		feats[4] = elem.en_pauling if elem.en_pauling else -1
+		feats[5] = elem.lattice_constant if elem.lattice_constant else -1
+		feats[6] = elem.dipole_polarizability if elem.dipole_polarizability else -1
+		feats[7] = elem.heat_of_formation if elem.heat_of_formation else -1
+		feats[8] = elem.fusion_heat if elem.fusion_heat else -1
+		feats[9] = elem.evaporation_heat if elem.evaporation_heat else -1
 		# print(feats)
 		averages += count * feats
 		# print(totals)
 	averages /= total_atoms
-	print(averages)
+	# print(averages)
 	return averages
 
 i = 0
 for code in materials_codes:
-	material = code.rstrip() # Add a string for it
+	material = code.rstrip()
 	url = url_base + material + url_tail + api_key
 	
-	print("Iteration " + str(i + 1) + "/10000")
+	if i % 10 == 0:
+		print("Iteration " + str(i + 1) + "/10000")
 
 	response = requests.get(url)
 	data = response.json()
@@ -70,12 +78,17 @@ for code in materials_codes:
 
 	features_all_elements.append(material_features)
 
+	if i != 0 and i % 100 == 0:
+		df = pd.DataFrame(data=features_all_elements, columns=features)
+		# print(df)
+		df.to_csv(path_or_buf=output_path, index=False)
+
 	i += 1
 
-	# if i > 5:
+	# if i > 10:
 	# 	break
 
-print(all_formulas)
+# print(all_formulas)
 
 # Write stuff to outuput files
 df = pd.DataFrame(data=features_all_elements, columns=features)
