@@ -9,7 +9,7 @@ import numpy as np
 
 if __name__ == "__main__":
 
-    X_train, Y_train, MPIDs_train, X_valid, Y_valid, MPIDs_valid, X_test, Y_test, MPIDs_test = split_data('unit_cell_data_16.csv', load_dataset(0.2))
+    X_train, Y_train, MPIDs_train, X_valid, Y_valid, MPIDs_valid, X_test, Y_test, MPIDs_test = split_data(load_dataset('./unit_cell_data_16.csv', 0.2))
 
     print("Training set information:")
     print("Positive examples: " + str(sum(Y_train)))
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     # X_valid = scaler.transform(X_valid)
     # X_test = scaler.transform(X_test)
 
-    clf = MLPClassifier(hidden_layer_sizes=(128, 256, 512, 256, 128, 64), learning_rate_init=0.0008, max_iter=300, n_iter_no_change=15, verbose=True).fit(X_train, Y_train)
+    clf = MLPClassifier(hidden_layer_sizes=(512, 512, 256, 256, 128, 64), learning_rate_init=0.001, max_iter=300, n_iter_no_change=15, verbose=True).fit(X_train, Y_train)
 
     Y_valid_predictions = np.zeros(len(Y_valid))
     for i, example in enumerate(X_valid):
