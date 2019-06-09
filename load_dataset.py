@@ -19,8 +19,6 @@ def load_dataset(filename, threshold=0.2):
 	else:
 		X_full = pd.read_csv(filename)
 
-	# print(X_full.shape)
-
 	total = pd.merge(X_full, Y_full, on="MPID")
 
 	# Random state below is a seed - change this when we go to run for real
@@ -28,26 +26,37 @@ def load_dataset(filename, threshold=0.2):
 	total = np.array([total[i] for i in range(len(total)) if total[i, -1] != float('inf')])
 
 	MPIDs = np.array(total[:, 0])
-
 	X = np.array(total[:, 1:-1])
 
+	# Replace NaN/-1/0's with average col value as needed
 	nan_locs = np.isnan(X)
 	X[nan_locs] = -1
 	# print(len(X[0]))
 	# print(X)
 	_, colnum = X.shape
 
+	nonexistent = -1
+	if filename == 'material_average_data_plus.csv':
+		nonexistent = 0
+
 	for col in range(colnum):
 		adj_col = X[:, col]
-		mask = adj_col != -1
+		mask = adj_col != nonexistent
 		mean = np.mean(adj_col * mask)
-		adj_col[adj_col == -1] = mean
+		adj_col[adj_col == nonexistent] = mean
 		X[:, col] = adj_col
 
+	# Scale data
 	if filename == 'material_average_data.csv' or 'combined':
 		scaler = StandardScaler()
-		scaler.fit(X[-9:])
+		scaler.fit(X[-8:]) # scale everything except MPID and atomic number
 		X = scaler.transform(X)
+
+	if filename == 'material_average_data_plus.csv':
+		scaler = StandardScaler()
+		scaler.fit(X[-16:]) # scale everything except MPID
+		X = scaler.transform(X)
+
 		
 	Y = np.array(total[:, -1])
 
