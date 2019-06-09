@@ -21,7 +21,7 @@ if __name__ == "__main__":
     # X_valid = scaler.transform(X_valid)
     # X_test = scaler.transform(X_test)
 
-    clf = MLPClassifier(hidden_layer_sizes=(128, 256, 512, 512, 256, 128, 64), learning_rate_init=0.002, max_iter=400, n_iter_no_change=10, verbose=True).fit(X_train, Y_train)
+    clf = MLPClassifier(hidden_layer_sizes=(128, 256, 512, 256, 128, 64), learning_rate_init=0.0008, max_iter=400, n_iter_no_change=10, verbose=True).fit(X_train, Y_train)
 
     Y_valid_predictions = np.zeros(len(Y_valid))
     for i, example in enumerate(X_valid):

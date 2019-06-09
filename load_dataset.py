@@ -1,6 +1,7 @@
 from numpy import genfromtxt
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
 ''' load_dataset: Loads and merges cleaned-up data
 	@param threshold: emittance threshold below which a data point is considered positive example
@@ -29,6 +30,7 @@ def load_dataset(filename, threshold=0.2):
 	MPIDs = np.array(total[:, 0])
 
 	X = np.array(total[:, 1:-1])
+
 	nan_locs = np.isnan(X)
 	X[nan_locs] = -1
 	# print(len(X[0]))
@@ -42,8 +44,11 @@ def load_dataset(filename, threshold=0.2):
 		adj_col[adj_col == -1] = mean
 		X[:, col] = adj_col
 
-	# print(X)
-
+	if filename == 'material_average_data.csv' or 'combined':
+		scaler = StandardScaler()
+		scaler.fit(X[-9:])
+		X = scaler.transform(X)
+		
 	Y = np.array(total[:, -1])
 
 	if threshold != -1:
