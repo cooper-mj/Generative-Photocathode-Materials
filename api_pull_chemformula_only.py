@@ -13,8 +13,8 @@ url_base = "https://www.materialsproject.org/rest/v1/materials/"
 url_tail = "/vasp/pretty_formula?API_KEY="
 api_key = "TsOqaHtJ0LRPqf5jL2Hn"
 
-output_path = "material_average_data.csv"
-formula_output_path = "all_chemical_formulas.txt"
+output_path = "material_average_data2.csv"
+formula_output_path = "all_chemical_formulas2.csv"
 
 features = ['MPID', 'Chemical formula']
 all_formulas = []
@@ -38,8 +38,8 @@ for code in materials_codes:
 
 	i += 1
 
-	if i > 10:
-		break
+	# if i > 10:
+	# 	break
 
 print(all_formulas)
 
@@ -49,4 +49,4 @@ print(all_formulas)
 #         f.write("%s\n" % formula)
 df = pd.DataFrame(data=all_formulas, columns=features)
 print(df)
-# df.to_csv(path_or_buf=formula_output_path, index=False)
+df.to_csv(path_or_buf=formula_output_path, index=False)
