@@ -5,3 +5,4 @@ unit_cell_data_16.csv
 env/
 */.DS_Store
 __pycache__/
+material_average_data.csv
