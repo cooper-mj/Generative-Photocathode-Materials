@@ -1,6 +1,7 @@
 from numpy import genfromtxt
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
 ''' load_dataset: Loads and merges cleaned-up data
 	@param threshold: emittance threshold below which a data point is considered positive example
@@ -10,7 +11,15 @@ import pandas as pd
 def load_dataset(filename, threshold=0.2):
 	# Get data
 	Y_full = pd.read_csv('emittance_labels.csv')
-	X_full = pd.read_csv(filename)
+	X_full = None
+	if filename == "combined":
+		X_unit_cell = pd.read_csv('unit_cell_data_16.csv')
+		X_avg = pd.read_csv('material_average_data.csv')
+		X_full = pd.merge(X_unit_cell, X_avg, on='MPID')
+	else:
+		X_full = pd.read_csv(filename)
+
+	# print(X_full.shape)
 
 	total = pd.merge(X_full, Y_full, on="MPID")
 
@@ -21,8 +30,25 @@ def load_dataset(filename, threshold=0.2):
 	MPIDs = np.array(total[:, 0])
 
 	X = np.array(total[:, 1:-1])
+
+	nan_locs = np.isnan(X)
+	X[nan_locs] = -1
 	# print(len(X[0]))
 	# print(X)
+	_, colnum = X.shape
+
+	for col in range(colnum):
+		adj_col = X[:, col]
+		mask = adj_col != -1
+		mean = np.mean(adj_col * mask)
+		adj_col[adj_col == -1] = mean
+		X[:, col] = adj_col
+
+	if filename == 'material_average_data.csv' or 'combined':
+		scaler = StandardScaler()
+		scaler.fit(X[-9:])
+		X = scaler.transform(X)
+		
 	Y = np.array(total[:, -1])
 
 	if threshold != -1:
