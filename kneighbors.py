@@ -1,4 +1,4 @@
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
 
 from load_dataset import load_dataset
 from load_dataset import split_data
@@ -14,7 +14,7 @@ if __name__ == "__main__":
 	print("Positive examples: " + str(sum(Y_train)))
 	print("Negative examples: " + str(len(Y_train) - sum(Y_train)))
 
-	clf = RandomForestClassifier(n_estimators=100)
+	clf = KNeighborsClassifier(n_neighbors=2, weights='distance')
 	clf.fit(X_train, Y_train)
 
 	Y_valid_predictions = np.zeros(len(Y_valid))

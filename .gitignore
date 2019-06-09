@@ -6,3 +6,4 @@ env/
 */.DS_Store
 __pycache__/
 material_average_data.csv
+all_chemical_formulas.txt
