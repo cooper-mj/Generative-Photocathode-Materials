@@ -10,7 +10,15 @@ import pandas as pd
 def load_dataset(filename, threshold=0.2):
 	# Get data
 	Y_full = pd.read_csv('emittance_labels.csv')
-	X_full = pd.read_csv(filename)
+	X_full = None
+	if filename == "combined":
+		X_unit_cell = pd.read_csv('unit_cell_data_16.csv')
+		X_avg = pd.read_csv('material_average_data.csv')
+		X_full = pd.merge(X_unit_cell, X_avg, on='MPID')
+	else:
+		X_full = pd.read_csv(filename)
+
+	# print(X_full.shape)
 
 	total = pd.merge(X_full, Y_full, on="MPID")
 
@@ -33,6 +41,8 @@ def load_dataset(filename, threshold=0.2):
 		mean = np.mean(adj_col * mask)
 		adj_col[adj_col == -1] = mean
 		X[:, col] = adj_col
+
+	# print(X)
 
 	Y = np.array(total[:, -1])
 
