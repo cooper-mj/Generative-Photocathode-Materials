@@ -21,8 +21,19 @@ def load_dataset(filename, threshold=0.2):
 	MPIDs = np.array(total[:, 0])
 
 	X = np.array(total[:, 1:-1])
+	nan_locs = np.isnan(X)
+	X[nan_locs] = -1
 	# print(len(X[0]))
 	# print(X)
+	_, colnum = X.shape
+
+	for col in range(colnum):
+		adj_col = X[:, col]
+		mask = adj_col != -1
+		mean = np.mean(adj_col * mask)
+		adj_col[adj_col == -1] = mean
+		X[:, col] = adj_col
+
 	Y = np.array(total[:, -1])
 
 	if threshold != -1:
