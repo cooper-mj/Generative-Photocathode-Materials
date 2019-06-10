@@ -14,7 +14,8 @@ def load_dataset(filename, threshold=0.2):
 	X_full = None
 	if filename == "combined":
 		X_unit_cell = pd.read_csv('unit_cell_data_16.csv')
-		X_avg = pd.read_csv('material_average_data.csv')
+		# X_avg = pd.read_csv('material_average_data.csv')
+		X_avg = pd.read_csv('material_average_data_plus.csv')
 		X_full = pd.merge(X_unit_cell, X_avg, on='MPID')
 	else:
 		X_full = pd.read_csv(filename)
@@ -47,15 +48,15 @@ def load_dataset(filename, threshold=0.2):
 		X[:, col] = adj_col
 
 	# Scale data
-	if filename == 'material_average_data.csv' or 'combined':
-		scaler = StandardScaler()
-		scaler.fit(X[-8:]) # scale everything except MPID and atomic number
-		X = scaler.transform(X)
+	# if filename == 'material_average_data.csv' or 'combined':
+	# 	scaler = StandardScaler()
+	# 	scaler.fit(X[-8:]) # scale everything except MPID and atomic number
+	# 	X = scaler.transform(X)
 
-	if filename == 'material_average_data_plus.csv':
-		scaler = StandardScaler()
-		scaler.fit(X[-16:]) # scale everything except MPID
-		X = scaler.transform(X)
+	# if filename == 'material_average_data_plus.csv':
+	# 	scaler = StandardScaler()
+	# 	scaler.fit(X[-16:]) # scale everything except MPID
+	# 	X = scaler.transform(X)
 
 		
 	Y = np.array(total[:, -1])
@@ -117,3 +118,26 @@ def accuracy_metric(Y_predictions, Y_actual):
 	print("Precision : " + str(precision))
 	print("Recall : " + str(recall))
 	print("F1 : " + str(F1))
+
+
+def augment_data(X, Y, num_permutations):
+	atoms = X[:, -64:]
+	# print(X)
+	# atoms = X[:, -6:]
+	XT = atoms.T
+	m, n = np.shape(XT)[0] // 2, np.shape(XT)[1]
+	all_new_inputs = None
+	all_labels = None
+
+	for i in range(num_permutations):
+		perm = XT.reshape(m, -1, n)[np.random.permutation(m)].reshape(-1,n)
+		new_data = np.concatenate((X[:, :-64], perm.T), axis=1)
+		# print(new_data)
+		if i == 0:
+			all_new_inputs = new_data
+			all_labels = Y
+		else:
+			# print('Concatenating!')
+			all_new_inputs = np.concatenate((all_new_inputs, new_data), axis=0)
+			all_labels = np.concatenate((all_labels, Y), axis=0)
+	return (np.concatenate((X, all_new_inputs), axis=0), np.concatenate((Y, all_labels), axis=0))	
