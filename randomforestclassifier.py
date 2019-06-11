@@ -1,5 +1,4 @@
 from sklearn.ensemble import RandomForestClassifier
-# from sklearn.datasets import make_classification
 
 from load_dataset import load_dataset
 from load_dataset import split_data
