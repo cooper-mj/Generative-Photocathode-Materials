@@ -44,11 +44,11 @@ def load_dataset(filename, threshold=0.2):
 		adj_col[adj_col == -1] = mean
 		X[:, col] = adj_col
 
-	if filename == 'material_average_data.csv' or 'combined':
-		scaler = StandardScaler()
-		scaler.fit(X[-9:])
-		X = scaler.transform(X)
-		
+	# if filename == 'material_average_data.csv' or 'combined':
+	# 	scaler = StandardScaler()
+	# 	scaler.fit(X[-9:])
+	# 	X[-9:] = scaler.transform(X[-9:])
+
 	Y = np.array(total[:, -1])
 
 	if threshold != -1:
