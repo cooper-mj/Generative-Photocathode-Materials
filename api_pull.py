@@ -5,7 +5,7 @@ import numpy as np
 from mendeleev import element
 
 UNIT_CELL_PARAMS = 7
-MAX_ATOMS = 10
+MAX_ATOMS = 16
 
 materials_codes = open("Raw_dataset/full_mpid_list_cell_size_sort.txt")
 
@@ -21,7 +21,10 @@ features = ["MPID" ,
 			"elem2", "a2", "b2", "c2", "elem3", "a3", "b3", "c3",
 			"elem4", "a4", "b4", "c4", "elem5", "a5", "b5", "c5",
 			"elem6", "a6", "b6", "c6", "elem7", "a7", "b7", "c7",
-			"elem8", "a8", "b8", "c8", "elem9", "a9", "b9", "c9"]
+			"elem8", "a8", "b8", "c8", "elem9", "a9", "b9", "c9",
+			"elem10", "a10", "b10", "c10", "elem11", "a11", "b11", "c11",
+			"elem12", "a12", "b12", "c12", "elem13", "a13", "b13", "c13",
+			"elem14", "a14", "b14", "c14", "elem15", "a15", "b15", "c15"]
 
 # features = ["MPID", "a", "b", "c", "alpha", "beta", "gamma", "volume",	  # unit cell params
 # 			"elem0", "a0", "b0", "c0", "elem1", "a1", "b1", "c1"]
@@ -32,7 +35,7 @@ i = 0
 for code in materials_codes:
 	material = code.rstrip() # Add a string for it
 	url = url_base + material + url_tail + api_key
-	
+
 	print("Iteration " + str(i + 1) + "/10000")
 
 	response = requests.get(url)

@@ -9,7 +9,7 @@ NO_EMITTANCE = float('inf')
 path = "Raw_dataset/"
 mpid_file = "full_mpid_list_cell_size_sort.txt"
 emittance_file = "Screening_data/intrinsic_emittance_"
-output_path = "data/emittance_labels.csv"
+output_path = "emittance_labels_2.csv"
 
 info = ["MPID", "min emittance"]
 
@@ -28,14 +28,14 @@ for i in range(NUM_MATERIALS):
 
 	try:
 		emittance = np.loadtxt(path + emittance_file + str(i) + ".txt")[1:]
+			# Load txt file and remove first measurement, which is always 0.225
 	except:
 		print("Unable to read file " + path + emittance_file + str(i) + ".txt")
 		material_info[1] = NO_EMITTANCE
 		info_all_materials.append(material_info)
 		continue
 
-	# Load txt file and remove first measurement, which is always 0.225
-	np.around(emittance, decimals=1)
+	emittance = np.around(emittance, decimals=1)
 	# Place measurements into buckets of nearest 0.1
 
 	# Maybe there's a more pythonic way to keep only elements that happen twice
