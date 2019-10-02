@@ -141,16 +141,16 @@ if __name__ == "__main__":
 	# X_valid = scaler.transform(X_valid)
 	# X_test = scaler.transform(X_test)
 
-	clf = MLPClassifier(hidden_layer_sizes=(64, 128, 256, 512, 256, 128, 64), alpha=0.5, tol=0.001, learning_rate_init=0.0008, max_iter=400, n_iter_no_change=10, verbose=True).fit(X_train, Y_train)
+	clf = MLPClassifier(hidden_layer_sizes=(64, 128, 256, 512, 256, 128, 64), alpha=0.9, tol=0.001, learning_rate_init=0.0008, max_iter=400, n_iter_no_change=10, verbose=True).fit(X_train, Y_train)
 	# clf = MLPClassifier(hidden_layer_sizes=(64, 128, 64), learning_rate_init=0.0008, max_iter=400, n_iter_no_change=10, verbose=True).fit(X_train, Y_train)
 	Y_valid_predictions = np.zeros(len(Y_valid))
 	for i, example in enumerate(X_valid):
 		Y_valid_predictions[i] = clf.predict(example.reshape(1, -1))
 
-	# clf = MLPClassifier(hidden_layer_sizes=(128, 256, 512, 256, 128, 64), learning_rate_init = 0.0008, max_iter=300, n_iter_no_change=15, verbose=True) #.fit(X_train, Y_train)
+	clf = MLPClassifier(hidden_layer_sizes=(128, 256, 512, 256, 128, 64), learning_rate_init = 0.0008, max_iter=300, n_iter_no_change=15, verbose=True) #.fit(X_train, Y_train)
 	accuracy_metric(Y_valid_predictions, Y_valid)
-	# title = "Learning Curves (Neural Network)"
+	title = "Learning Curves (Neural Network)"
 
 	# estimator = GaussianNB()
-	# plot_learning_curve(clf, title, X_train, Y_train, ylim=(0.0, 1.01), n_jobs=4)
-	# plt.show()
+	plot_learning_curve(clf, title, X_train, Y_train, ylim=(0.0, 1.01), n_jobs=4)
+	plt.show()
