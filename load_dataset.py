@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler
 		Set threshold = -1 for non-binary models
 	@return tuple of numpy arrays for MPIDs, features, and labels
 '''
-def load_dataset(filename, threshold=0.2):
+def load_dataset(filename):#, threshold=0.2):
 	# Get data
 	Y_full = pd.read_csv('emittance_labels.csv')
 	X_full = None
@@ -66,8 +66,8 @@ def load_dataset(filename, threshold=0.2):
 
 	Y = np.array(total[:, -1])
 
-	if threshold != -1:
-		Y = [1 if y_i <= threshold else 0 for y_i in Y]
+	# if threshold != -1:
+	# 	Y = [1 if y_i <= threshold else 0 for y_i in Y]
 
 	return (MPIDs, X, Y)
 

@@ -6,7 +6,8 @@ from load_dataset import split_data
 
 if __name__ == "__main__":
 
-	X_train, Y_train, MPIDs_train, X_valid, Y_valid, MPIDs_valid, X_test, Y_test, MPIDs_test = split_data(load_dataset(threshold=-1))
+	X_train, Y_train, MPIDs_train, X_valid, Y_valid, MPIDs_valid, X_test, Y_test, MPIDs_test = split_data(load_dataset("unit_cell_data_16.csv"))
 
 	lin_clf = LinearRegression().fit(X_train, Y_train)
 	predictions = lin_clf.predict(X_test)
+
