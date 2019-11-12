@@ -13,3 +13,6 @@ The datasets which can be loaded into the project are:
 - unit_cell_data_16.csv - expanded unit cell representation.
 - material_average_data.csv - average properties representation.
 - material_average_data_plus.csv - expanded average properties representation.
+
+Early investigating of PyGAN library:
+https://pypi.org/project/pygan/
