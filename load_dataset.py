@@ -14,7 +14,7 @@ def load_dataset(filename, threshold=0.2):
 	X_full = None
 	if filename == "combined":
 		X_unit_cell = pd.read_csv('unit_cell_data_16.csv')
-		# X_avg = pd.read_csv('material_average_data.csv')
+		X_avg = pd.read_csv('material_average_data.csv')
 		X_avg = pd.read_csv('material_average_data_plus.csv')
 		X_full = pd.merge(X_unit_cell, X_avg, on='MPID')
 	else:

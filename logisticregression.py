@@ -9,14 +9,11 @@ import numpy as np
 
 if __name__ == "__main__":
 
-	X_train, Y_train, MPIDs_train, X_valid, Y_valid, MPIDs_valid, X_test, Y_test, MPIDs_test = split_data(load_dataset("material_average_data.csv", 0.2))
+	X_train, Y_train, MPIDs_train, X_valid, Y_valid, MPIDs_valid, X_test, Y_test, MPIDs_test = split_data(load_dataset("unit_cell_data.csv", 0.2))
 
 	print("Training set information:")
 	print("Positive examples: " + str(sum(Y_train)))
 	print("Negative examples: " + str(len(Y_train) - sum(Y_train)))
-
-	print(X_train)
-	print(Y_train)
 
 	clf = LogisticRegression(penalty='l2', solver='lbfgs', max_iter = 10000000).fit(X_train, Y_train)
 
