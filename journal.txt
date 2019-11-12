@@ -16,3 +16,8 @@ The datasets which can be loaded into the project are:
 
 Early investigating of PyGAN library:
 https://pypi.org/project/pygan/
+
+Makena: google cloud setup
+Created our project on the Google Cloud Platform and sent invites to Jason and Michael.
+We are awaiting a quota increase, so I will notify everyone when all resources are 
+set up.
