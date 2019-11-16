@@ -36,16 +36,25 @@ def load_dataset(filename):#, threshold=0.2):
 	# print(X)
 	_, colnum = X.shape
 
-	nonexistent = -1
-	if filename == 'material_average_data_plus.csv':
-		nonexistent = 0
+	# nonexistent = -1
+	# if filename == 'material_average_data_plus.csv':
+	# 	nonexistent = 0
 
-	for col in range(colnum):
-		adj_col = X[:, col]
-		mask = adj_col != nonexistent
-		mean = np.mean(adj_col * mask)
-		adj_col[adj_col == nonexistent] = mean
-		X[:, col] = adj_col
+	# for col in range(colnum):
+	# 	adj_col = X[:, col]
+	# 	mask = adj_col != nonexistent
+	# 	mean = np.mean(adj_col * mask)
+	# 	adj_col[adj_col == nonexistent] = mean
+
+	filtered_total = np.array([total[i] for i in range(len(total)) if total[i, -1] < 0.5]) #0.5 is threshold value here
+	X = filtered_total[:,:-1]
+	Y = np.array(filtered_total[:, -1])
+	print(X)
+	print(Y)
+
+	# Filter only the X's where the corresponding Y is less than 0.5
+
+
 
 	# if filename == 'material_average_data.csv' or 'combined':
 	# 	scaler = StandardScaler()
@@ -63,11 +72,7 @@ def load_dataset(filename):#, threshold=0.2):
 	# 	scaler.fit(X[-16:]) # scale everything except MPID
 	# 	X = scaler.transform(X)
 
-
-	Y = np.array(total[:, -1])
-
-	# if threshold != -1:
-	# 	Y = [1 if y_i <= threshold else 0 for y_i in Y]
+	print(len(X))
 
 	return (MPIDs, X, Y)
 
@@ -75,28 +80,28 @@ def load_dataset(filename):#, threshold=0.2):
 	@param tup: tuple of MPIs, X's, Y's as returned by load_dataset
 	@return tuple of numpy arrays for training, validation, and test sets
 '''
-def split_data(tup, train_split = 0.8, valid_split = 0.1, test_split = 0.1):
+# def split_data(tup, train_split = 0.8, valid_split = 0.1, test_split = 0.1):
 
-	MPIDs, X, Y = tup
+# 	MPIDs, X, Y = tup
 
-	assert (train_split + valid_split + test_split == 1),"The proportion of data dedicated to train, validation, and test sets does not sum to 1."
+# 	assert (train_split + valid_split + test_split == 1),"The proportion of data dedicated to train, validation, and test sets does not sum to 1."
 
-	training_threshold = train_split
-	valid_threshold = train_split + valid_split
+# 	training_threshold = train_split
+# 	valid_threshold = train_split + valid_split
 
-	X_train = X[:int(len(X)*training_threshold)]
-	Y_train = Y[:int(len(Y)*training_threshold)]
-	MPIDs_train = MPIDs[:int(len(MPIDs)*training_threshold)]
+# 	X_train = X[:int(len(X)*training_threshold)]
+# 	Y_train = Y[:int(len(Y)*training_threshold)]
+# 	MPIDs_train = MPIDs[:int(len(MPIDs)*training_threshold)]
 
-	X_valid = X[int(len(X)*training_threshold):int(len(X)*valid_threshold)]
-	Y_valid = Y[int(len(Y)*training_threshold):int(len(X)*valid_threshold)]
-	MPIDs_valid = MPIDs[int(len(MPIDs)*training_threshold):int(len(X)*valid_threshold)]
+# 	X_valid = X[int(len(X)*training_threshold):int(len(X)*valid_threshold)]
+# 	Y_valid = Y[int(len(Y)*training_threshold):int(len(X)*valid_threshold)]
+# 	MPIDs_valid = MPIDs[int(len(MPIDs)*training_threshold):int(len(X)*valid_threshold)]
 
-	X_test = X[int(len(X)*valid_threshold):]
-	Y_test = Y[int(len(Y)*valid_threshold):]
-	MPIDs_test = MPIDs[int(len(MPIDs)*valid_threshold):]
+# 	X_test = X[int(len(X)*valid_threshold):]
+# 	Y_test = Y[int(len(Y)*valid_threshold):]
+# 	MPIDs_test = MPIDs[int(len(MPIDs)*valid_threshold):]
 
-	return (X_train, Y_train, MPIDs_train, X_valid, Y_valid, MPIDs_valid, X_test, Y_test, MPIDs_test)
+# 	return (X_train, Y_train, MPIDs_train, X_valid, Y_valid, MPIDs_valid, X_test, Y_test, MPIDs_test)
 
 def accuracy_metric(Y_predictions, Y_actual):
 	true_positives = 0.0
