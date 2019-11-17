@@ -157,9 +157,9 @@ if __name__ == "__main__":
     parser.add_argument('--latent', type=int, default=8, help="Latent representation size")
     parser.add_argument('--g_input_size', type=int, default=8, help="Random noise dimension coming into generator, per output vector")
     parser.add_argument('--g_hidden_size', type=int, default=32, help="Generator complexity")
-    parser.add_argument('--g_output_size', type=int, default=72, help="Size of generator output vector")
+    parser.add_argument('--g_output_size', type=int, default=71, help="Size of generator output vector")
 
-    parser.add_argument('--d_input_size', type=int, default=72, help="Minibatch size - cardinality of distributions (change)")
+    parser.add_argument('--d_input_size', type=int, default=71, help="Minibatch size - cardinality of distributions (change)")
     parser.add_argument('--d_hidden_size', type=int, default=32, help="Discriminator complexity")
     parser.add_argument('--d_output_size', type=int, default=1, help="Single dimension for real vs fake classification")
 

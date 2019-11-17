@@ -27,14 +27,14 @@ def load_dataset(filename):#, threshold=0.2):
 	total = np.array([total[i] for i in range(len(total)) if total[i, -1] != float('inf')])
 
 	MPIDs = np.array(total[:, 0])
-	X = np.array(total[:, 1:-1])
+	# X = np.array(total[:, 1:-1])
 
-	# Replace NaN/-1/0's with average col value as needed
-	nan_locs = np.isnan(X)
-	X[nan_locs] = -1
-	# print(len(X[0]))
-	# print(X)
-	_, colnum = X.shape
+	# # Replace NaN/-1/0's with average col value as needed
+	# nan_locs = np.isnan(X)
+	# X[nan_locs] = -1
+	# # print(len(X[0]))
+	# # print(X)
+	# _, colnum = X.shape
 
 	# nonexistent = -1
 	# if filename == 'material_average_data_plus.csv':
@@ -47,7 +47,7 @@ def load_dataset(filename):#, threshold=0.2):
 	# 	adj_col[adj_col == nonexistent] = mean
 
 	filtered_total = np.array([total[i] for i in range(len(total)) if total[i, -1] < 0.5]) #0.5 is threshold value here
-	X = filtered_total[:,:-1]
+	X = filtered_total[:,1:-1]
 	Y = np.array(filtered_total[:, -1])
 
 	# Filter only the X's where the corresponding Y is less than 0.5
