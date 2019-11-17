@@ -1,14 +1,10 @@
 #!/usr/bin/env python
 
-# Generative Adversarial Networks (GAN) example in PyTorch. Tested with PyTorch 0.4.1, Python 3.6.7 (Nov 2018)
-# See related blog post at https://medium.com/@devnag/generative-adversarial-networks-gans-in-50-lines-of-code-pytorch-e81b79659e3f#.sch4xgsa9
-
 import argparse
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import tqdm
 
 from discriminator import Discriminator
 from generator import Generator
@@ -63,6 +59,7 @@ def get_optimizers():
     )
 
     # Choose an optimizer
+    # TODO: TRY DIFFERENT OPTIMIZERS
     if args.optim == 'Adam':
         d_optimizer = optim.Adam(D.parameters(), lr=args.d_learning_rate)
         g_optimizer = optim.Adam(G.parameters(), lr=args.g_learning_rate)
