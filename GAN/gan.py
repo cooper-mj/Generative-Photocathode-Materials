@@ -1,32 +1,20 @@
-# import numpy as np
-# from sklearn.linear_model import LinearRegression
-# import pygan
-
-# from load_dataset import load_dataset
-
-# if __name__ == "__main__":
-
-# 	_, X, Y = load_dataset("unit_cell_data_16.csv")
-
-	# lin_clf = LinearRegression().fit(X_train, Y_train)
-	# predictions = lin_clf.predict(X_test)
 #!/usr/bin/env python
 
 # Generative Adversarial Networks (GAN) example in PyTorch. Tested with PyTorch 0.4.1, Python 3.6.7 (Nov 2018)
 # See related blog post at https://medium.com/@devnag/generative-adversarial-networks-gans-in-50-lines-of-code-pytorch-e81b79659e3f#.sch4xgsa9
 
+import argparse
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.autograd import Variable
+import tqdm
 
-# matplotlib_is_available = True
-# try:
-#   from matplotlib import pyplot as plt
-# except ImportError:
-#   print("Will skip plotting; matplotlib is not available.")
-matplotlib_is_available = False
+from discriminator import Discriminator
+from generator import Generator
+from utils import load_dataset
+from matplotlib import pyplot as plt
+from torch.autograd import Variable
 
 # Data params
 data_mean = 4
@@ -37,12 +25,10 @@ data_stddev = 1.25
 #(name, preprocess, d_input_func) = ("Data and variances", lambda data: decorate_with_diffs(data, 2.0), lambda x: x * 2)
 #(name, preprocess, d_input_func) = ("Data and diffs", lambda data: decorate_with_diffs(data, 1.0), lambda x: x * 2)
 #(name, preprocess, d_input_func) = ("Only 4 moments", lambda data: get_moments(data), lambda x: 4)
-print(name)
-print(preprocess)
-print(d_input_func)
-print("Using data [%s]" % (name))
 
-# ##### DATA: Target data and generator input data
+# ==============================================================================
+# Data sampler
+# ==============================================================================
 
 def get_distribution_sampler(mu, sigma):
     return lambda n: torch.Tensor(np.random.normal(mu, sigma, (1, n)))  # Gaussian
@@ -50,37 +36,9 @@ def get_distribution_sampler(mu, sigma):
 def get_generator_input_sampler():
     return lambda m, n: torch.rand(m, n)  # Uniform-dist data into generator, _NOT_ Gaussian
 
-# ##### MODELS: Generator model and discriminator model
-
-class Generator(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, f):
-        super(Generator, self).__init__()
-        self.map1 = nn.Linear(input_size, hidden_size)
-        self.map2 = nn.Linear(hidden_size, hidden_size)
-        self.map3 = nn.Linear(hidden_size, output_size)
-        self.f = f
-
-    def forward(self, x):
-        x = self.map1(x)
-        x = self.f(x)
-        x = self.map2(x)
-        x = self.f(x)
-        x = self.map3(x)
-        return x
-
-class Discriminator(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, f):
-        super(Discriminator, self).__init__()
-        self.map1 = nn.Linear(input_size, hidden_size)
-        self.map2 = nn.Linear(hidden_size, hidden_size)
-        self.map3 = nn.Linear(hidden_size, output_size)
-        self.f = f
-
-    def forward(self, x):
-        x = self.f(self.map1(x))
-        x = self.f(self.map2(x))
-        return self.f(self.map3(x))
-
+# ==============================================================================
+# Utilities
+# ==============================================================================
 def extract(v):
     return v.data.storage().tolist()
 
@@ -108,58 +66,44 @@ def decorate_with_diffs(data, exponent, remove_raw_data=False):
     else:
         return torch.cat([data, diffs], 1)
 
-def train():
-    # Model parameters
-    g_input_size = 1      # Random noise dimension coming into generator, per output vector
-    g_hidden_size = 5     # Generator complexity
-    g_output_size = 1     # Size of generated output vector
-    d_input_size = 50    # Minibatch size - cardinality of distributions
-    d_hidden_size = 10    # Discriminator complexity
-    d_output_size = 1     # Single dimension for 'real' vs. 'fake' classification
-    minibatch_size = d_input_size
-
-    d_learning_rate = 1e-3
-    g_learning_rate = 1e-3
-    sgd_momentum = 0.9
-
-    num_epochs = 5000
-    print_interval = 100
-    d_steps = 20
-    g_steps = 20
-
-    dfe, dre, ge = 0, 0, 0
-    d_real_data, d_fake_data, g_fake_data = None, None, None
-
+# ==============================================================================
+# Train loop
+# ==============================================================================
+def train(x, y):
     discriminator_activation_function = torch.sigmoid
     generator_activation_function = torch.tanh
 
+    dfe, dre, ge = 0, 0, 0
+    d_real_data, d_fake_data, g_fake_data = None, None, None
+    print_interval = 100
+
     d_sampler = get_distribution_sampler(data_mean, data_stddev)
     gi_sampler = get_generator_input_sampler()
-    G = Generator(input_size=g_input_size,
-                  hidden_size=g_hidden_size,
-                  output_size=g_output_size,
+    G = Generator(input_size=args.g_input_size,
+                  hidden_size=args.g_hidden_size,
+                  output_size=args.g_output_size,
                   f=generator_activation_function)
-    D = Discriminator(input_size=d_input_func(d_input_size),
-                      hidden_size=d_hidden_size,
-                      output_size=d_output_size,
+    D = Discriminator(input_size=d_input_func(args.d_input_size),
+                      hidden_size=args.d_hidden_size,
+                      output_size=args.d_output_size,
                       f=discriminator_activation_function)
     criterion = nn.BCELoss()  # Binary cross entropy: http://pytorch.org/docs/nn.html#bceloss
-    d_optimizer = optim.SGD(D.parameters(), lr=d_learning_rate, momentum=sgd_momentum)
-    g_optimizer = optim.SGD(G.parameters(), lr=g_learning_rate, momentum=sgd_momentum)
+    d_optimizer = optim.SGD(D.parameters(), lr=args.d_learning_rate, momentum=args.sgd_momentum)
+    g_optimizer = optim.SGD(G.parameters(), lr=args.g_learning_rate, momentum=args.sgd_momentum)
 
-    for epoch in range(num_epochs):
-        for d_index in range(d_steps):
+    for epoch in range(args.num_epochs):
+        for d_index in range(args.d_steps):
             # 1. Train D on real+fake
             D.zero_grad()
 
             #  1A: Train D on real
-            d_real_data = Variable(d_sampler(d_input_size))
+            d_real_data = Variable(d_sampler(args.d_input_size))
             d_real_decision = D(preprocess(d_real_data))
             d_real_error = criterion(d_real_decision, Variable(torch.ones([1,1])))  # ones = true
             d_real_error.backward() # compute/store gradients, but don't change params
 
             #  1B: Train D on fake
-            d_gen_input = Variable(gi_sampler(minibatch_size, g_input_size))
+            d_gen_input = Variable(gi_sampler(args.minibatch_size, args.g_input_size))
             d_fake_data = G(d_gen_input).detach()  # detach to avoid training G on these labels
             d_fake_decision = D(preprocess(d_fake_data.t()))
             d_fake_error = criterion(d_fake_decision, Variable(torch.zeros([1,1])))  # zeros = fake
@@ -168,11 +112,11 @@ def train():
 
             dre, dfe = extract(d_real_error)[0], extract(d_fake_error)[0]
 
-        for g_index in range(g_steps):
+        for g_index in range(args.g_steps):
             # 2. Train G on D's response (but DO NOT train D on these labels)
             G.zero_grad()
 
-            gen_input = Variable(gi_sampler(minibatch_size, g_input_size))
+            gen_input = Variable(gi_sampler(args.minibatch_size, args.g_input_size))
             g_fake_data = G(gen_input)
             dg_fake_decision = D(preprocess(g_fake_data.t()))
             g_error = criterion(dg_fake_decision, Variable(torch.ones([1,1])))  # Train G to pretend it's genuine
@@ -185,16 +129,31 @@ def train():
             print("Epoch %s: D (%s real_err, %s fake_err) G (%s err); Real Dist (%s),  Fake Dist (%s) " %
                   (epoch, dre, dfe, ge, stats(extract(d_real_data)), stats(extract(d_fake_data))))
 
-    if matplotlib_is_available:
-        print("Plotting the generated distribution...")
-        values = extract(g_fake_data)
-        print(" Values: %s" % (str(values)))
-        plt.hist(values, bins=50)
-        plt.xlabel('Value')
-        plt.ylabel('Count')
-        plt.title('Histogram of Generated Distribution')
-        plt.grid(True)
-        plt.show()
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--g_input_size', type=int, default=1, help="Random noise dimension coming into generator, per output vector")
+    parser.add_argument('--g_hidden_size', type=int, default=5, help="Generator complexity")
+    parser.add_argument('--g_output_size', type=int, default=1, help="Size of generator output vector")
+    parser.add_argument('--d_input_size', type=int, default=50, help="Minibatch size - cardinality of distributions (change)")
+    parser.add_argument('--d_hidden_size', type=int, default=10, help="Discriminator complexity")
+    parser.add_argument('--d_output_size', type=int, default=1, help="Single dimension for real vs fake classification")
+    parser.add_argument('--minibatch_size', type=int, default=50)
 
-train()
+    parser.add_argument('--d_learning_rate', type=float, default=1e-3)
+    parser.add_argument('--g_learning_rate', type=float, default=1e-3)
+    parser.add_argument('--sgd_momentum', type=float, default=0.9)
+
+    parser.add_argument('--num_epochs', type=int, default=5000)
+    parser.add_argument('--print_interval', type=int, default=100)
+    parser.add_argument('--d_steps', type=int, default=20)
+    parser.add_argument('--g_steps', type=int, default=20)
+
+    args = parser.parse_args()
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    _, X, Y = load_dataset("../unit_cell_data_16.csv")
+    print(X.shape)
+    print(Y.shape)
+
+    train(x=X, y=Y)
