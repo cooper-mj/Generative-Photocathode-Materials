@@ -1,14 +1,10 @@
 #!/usr/bin/env python
 
-# Generative Adversarial Networks (GAN) example in PyTorch. Tested with PyTorch 0.4.1, Python 3.6.7 (Nov 2018)
-# See related blog post at https://medium.com/@devnag/generative-adversarial-networks-gans-in-50-lines-of-code-pytorch-e81b79659e3f#.sch4xgsa9
-
 import argparse
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import tqdm
 
 from discriminator import Discriminator
 from generator import Generator
@@ -120,20 +116,18 @@ def train(dataloader, num_batches):
             real_particle_batch = torch.Tensor(real_particle_batch)
             N = real_particle_batch.shape[0] # This should be the batch size
 
-            # Train the discriminator for d_steps
+            # Train the discriminator once
             real_data = Variable(real_particle_batch)  # gets a single row from the particles data
             d_noise = gen_noise(N)  # generate a batch of noise vectors
             fake_data = G(d_noise).detach()
 
-            # print(real_data.shape)
-            # print(fake_data.shape)
-
             total_d_error, d_pred_real, d_pred_fake = train_discriminator(D, d_optimizer, loss, real_data, fake_data)
 
-            # Train the generator for d_steps
-            g_noise = gen_noise(N)
-            fake_data = G(g_noise)
-            g_error = train_generator(D, g_optimizer, loss, fake_data)
+            # Train the generator 5 times for every 1 time we train the discriminator
+            for d_step in range(5):
+                g_noise = gen_noise(N)
+                fake_data = G(g_noise)
+                g_error = train_generator(D, g_optimizer, loss, fake_data)
 
             # Run logging to examine progress
             logger.log(total_d_error, g_error, epoch, n_batch, num_batches)
