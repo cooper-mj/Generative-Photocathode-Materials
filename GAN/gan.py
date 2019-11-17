@@ -185,6 +185,7 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     _, X, Y = load_dataset("../unit_cell_data_16.csv")
+    print(X.shape)
     X = batch_dataset(X)
     num_batches = len(X)
 
