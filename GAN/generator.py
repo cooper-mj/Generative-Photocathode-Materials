@@ -15,15 +15,19 @@ class Generator(nn.Module):
             nn.LeakyReLU(self.p)
         )
         self.h1 = nn.Sequential(
-            nn.Linear(int(hidden_size/4), int(hidden_size/2)),
+            nn.Linear(int(hidden_size/4), hidden_size),
             nn.LeakyReLU(self.p)
         )
         self.h2 = nn.Sequential(
-            nn.Linear(int(hidden_size/2), hidden_size)
+            nn.Linear(hidden_size, int(hidden_size/2)),
+            nn.LeakyReLU(self.p)
+        )
+        self.h3 = nn.Sequential(
+            nn.Linear(int(hidden_size/2), hidden_size),
+            nn.LeakyReLU(self.p)
         )
         self.out = nn.Sequential(
             nn.Linear(hidden_size, output_size),
-            nn.Tanh()
         )
 
     def forward(self, x):
