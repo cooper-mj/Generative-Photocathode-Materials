@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import pickle
 
 from discriminator import Discriminator
 from generator import Generator
@@ -108,7 +109,7 @@ def train(dataloader, num_batches):
     G, D, d_optimizer, g_optimizer = get_optimizers()
 
     # Sample particles to examine progress
-    num_particle_samples = 4
+    num_particle_samples = 100
     test_noise = gen_noise(num_particle_samples)
 
     for epoch in range(args.num_epochs):
@@ -142,8 +143,18 @@ def train(dataloader, num_batches):
                     d_pred_real,
                     d_pred_fake
                 )
+    # Import the evaluator NN
+    clf = pickle.load(open('NN_evaluator.sav', 'rb'))
+    # Generate a test particle
     sample_particle = G(test_noise)
+    # Evaluator predicts on that particle
+    sample_particle = sample_particle.detach().numpy()
+    prediction = clf.predict(sample_particle)
+    # Printout
+    print("Generated Example Particles")
     print(sample_particle)
+    print("Example Particle Predictions")
+    print(prediction)
 
 
 if __name__ == "__main__":
