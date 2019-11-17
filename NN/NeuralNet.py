@@ -11,6 +11,8 @@ import itertools as it
 from sklearn.model_selection import learning_curve
 import matplotlib.pyplot as plt
 
+import pickle
+
 # Try excluding 1 element at a time
 def run_experiment(clf, X_train, Y_train, X_valid, Y_valid):
 	num_examples, num_features = np.shape(X_train)
@@ -60,6 +62,10 @@ if __name__ == "__main__":
 
 	clf = MLPClassifier(hidden_layer_sizes=(64, 128, 256, 512, 256, 128, 64), alpha=0.9, tol=0.001, learning_rate_init=0.0008, max_iter=400, n_iter_no_change=10, verbose=True).fit(X_train, Y_train)
 	# clf = MLPClassifier(hidden_layer_sizes=(64, 128, 64), learning_rate_init=0.0008, max_iter=400, n_iter_no_change=10, verbose=True).fit(X_train, Y_train)
+	# save the model to disk
+	filename = 'NN_evaluator.sav'
+	pickle.dump(clf, open(filename, 'wb'))
+
 	Y_valid_predictions = np.zeros(len(Y_valid))
 	for i, example in enumerate(X_valid):
 		Y_valid_predictions[i] = clf.predict(example.reshape(1, -1))
