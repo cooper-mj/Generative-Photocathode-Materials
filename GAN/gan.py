@@ -103,13 +103,12 @@ def train_generator(D, g_optimizer, loss, fake_data):
     g_optimizer.step()
     return error
 
-def train(dataloader, num_batches):
+def train(dataloader, num_batches, num_particle_samples=100):
     logger = Logger(model_name='GAN', data_name='Particles')
     loss = nn.BCELoss()  # Utilizing Binary Cross Entropy Loss
     G, D, d_optimizer, g_optimizer = get_optimizers()
 
     # Sample particles to examine progress
-    num_particle_samples = 100
     test_noise = gen_noise(num_particle_samples)
 
     for epoch in range(args.num_epochs):
@@ -155,6 +154,7 @@ def train(dataloader, num_batches):
     print(sample_particle)
     print("Example Particle Predictions")
     print(prediction)
+    return G, D, sample_particle, prediction
 
 
 if __name__ == "__main__":

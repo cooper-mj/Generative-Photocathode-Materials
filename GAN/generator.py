@@ -28,6 +28,7 @@ class Generator(nn.Module):
         self.out = nn.Sequential(
             nn.Linear(hidden_size, output_size)
         )
+        
     def forward(self, x):
         x = self.h0(x)
         x = self.h1(x)
