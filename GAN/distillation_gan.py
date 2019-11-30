@@ -20,45 +20,72 @@ from torchvision import transforms, datasets
 # ==============================================================================
 # Distillation GAN
 # ==============================================================================
-def get_training_partitions():
+def get_training_partitions(X):
     """
     Generates column-partitioned training sets for various GANs
+    # TODO: for an extension, we can sample a number of random datasets
     """
     atomic_X = X[:]  # TODO: partition into the atomic number features
     locations_X = X[:]  # TODO: partition into connection features
     other_X = X[:]
+    partions = [atomic_X, locations_X, other_X]
+    return partitions
 
-    return training_partitions
 
-
-def init_population(partitions):
+def init_population(X, num_batches):
     """
     Initializes a population given the initial training partitions
     """
-    return []
+    partitions = get_training_partitions(X)
+    generation = 0
+    population = map()
+    for i, partition in enumerate(partitions):
+        G, D, _, evaluations = train(
+            partition,
+            num_batches,
+            args.num_particle_samples
+        )
+        MLE_emittance = torch.mean(evaluations)
+        population['gen%dpartition%d' % (generation, i)] = {
+            'generator': G,
+            'discriminator': D,
+            'emittance': MLE_emittance,
+            'partition': partition
+        }
+    return population
 
 
-def mutate(population):
+def mutate(population, num_batches, generation):
     """
     Trains a GAN for each population element
     """
-    pass
+    population = map()
+    i = 0
+    for label, map in population.items():
+        G, D, _, evaluations = train(
+            map['partition'],
+            num_batches,
+            args.num_particle_samples,
+            G=map['generator'],
+            D=map['discriminator']
+        )
+        MLE_emittance = torch.mean(evaluations)
+        population['gen%dpartition%d' % (generation, i)] = {
+            'generator': G,
+            'discriminator': D,
+            'emittance': MLE_emittance,
+            'partition': partition
+        }
+        i += 1
+    return population
 
 
 def select_fittest(X, num_batches, k):
     """
-    Runs GAN on particles dataset k times, and selects the most fit teacher network
+    Select k fittest GANs
     """
-    fittest_model, highest_fitness = None, 0
-    for i in range(k):
-        G, D, particle_samples, evaluations = train(X, num_batches, args.num_particle_samples)
-        MLE_emittance = torch.mean(evaluations)
-        if MLE_emittance > highest_fitness:
-            fittest_model = (G, D)
-            highest_fitness = MLE_emittance
-
-    print('Over %d runs, found a fittest GAN teacher with an MLE emittance of %.2f' % (k, highest_fitness))
-    return fittest_model, highest_fitness
+    # sort by map['emittance']
+    # return top k
 
 
 def crossover(pol1, pol2):
@@ -85,33 +112,34 @@ def breed(parents):
 
 def train_KD_GAN(X, Y, num_batches, k, r):
     """
-    Trains a student GAN network from a teacher GAN selected from k GAN runs and r epochs
+    Trains a student GAN network from a teacher GAN selected from population and r epochs
         Specifically for our project, we would like to experiment with
         generating our atomic numbers and connections separately, to do this,
         we distill a GAN trained on atomic numbers and a GAN trained on connections
         into a binary GAN policy and train a student using a framework similar
         to GPO (https://arxiv.org/pdf/1711.01012.pdf)
-
-    # TODO create a population
     """
-    training_partitions = get_training_partitions(X)
-    population = init_population(training_partitions)
+    population = init_population(X, num_batches)
     epoch = 0
 
     while epoch < r and len(population) > 1:
-        population = mutate(population)
-        parents = select_fittest(population)
+        if epoch > 0:
+            population = mutate(population, num_batches, epoch)
+        parents = select_k_fittest(population, k)
         population = breed(parents)
+        epoch += 1
 
-    return population[0]
+    # Run a final training on the resultant child to ensure training on full dataset
+    student = population[0]
+    student = train(
+        X,
+        num_batches,
+        args.num_particle_samples,
+        student['generator'],
+        student['discriminator']
+    )
 
-    # fittest_atomic_GAN, highest_atomic_fitness = select_fittest(atomic_X, num_batches, k)
-    # fittest_connections_GAN, highest_connections_fitness = select_fittest(connections_X, num_batches, k)
-    # fittest_others_GAN, highest_others_fitness = select_fittest(other_X, num_batches, k)
-
-    # binary_crossover_GAN, crossover_fitness = crossover(fittest_atomic_GAN, fittest_connections_GAN)
-    # student_GAN, student_fitness = dagger_distillation(binary_crossover_GAN)
-    # return student_GAN, student_fitness
+    return student
 
 
 if __name__ == "__main__":

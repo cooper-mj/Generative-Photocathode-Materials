@@ -103,10 +103,13 @@ def train_generator(D, g_optimizer, loss, fake_data):
     g_optimizer.step()
     return error
 
-def train(dataloader, num_batches, num_particle_samples=100):
+def train(dataloader, num_batches, num_particle_samples=100, G=None, D=None):
     logger = Logger(model_name='GAN', data_name='Particles')
     loss = nn.BCELoss()  # Utilizing Binary Cross Entropy Loss
-    G, D, d_optimizer, g_optimizer = get_optimizers()
+    if not G and not D:
+        G, D, d_optimizer, g_optimizer = get_optimizers()
+    else:
+        _, _, d_optimizer, g_optimizer = get_optimizers()
 
     # Sample particles to examine progress
     test_noise = gen_noise(num_particle_samples)
