@@ -30,11 +30,19 @@ def get_training_partitions(X):
     other_idx = [i for i in range(1,8)]
     other_X = X[:,other_idx]
 
-    atomic_idx = [i for i in range(1,73)]
-    atomic_X = X[:]  # TODO: partition into the atomic number features, if not col, then 0's? otherwise, partitions needs to contian column indices
+    # ======================================================================== #
+    # Construction Zone:
+    #   We need to select the indices corresponding to atomic id and locations
+    # ======================================================================== #
+    atomic_idx = [i for i in range(1,73)] # TODO
+    atomic_X = X[:,atomic_idx]
 
-    locations_idx = [i for i in range(1,73)]
-    locations_X = X[:]  # TODO: partition into connection features
+    locations_idx = [i for i in range(1,73)] # TODO
+    locations_X = X[:,locations_idx]
+    # ======================================================================== #
+    # Construction Zone:
+    #   We need to select the indices corresponding to atomic id and locations
+    # ======================================================================== #
 
     return [(other_X, other_idx), (atomic_X, atomic_idx), (locations_X, locations_idx)]
 
@@ -121,7 +129,6 @@ def crossover(pol1, pol2, pol3):
     G_3 = pol3['generator']
     p_3 = pol3['partition']
 
-    # joint_partition = torch.cat((p_1[0], p_2[0], p_3[0]), dim=0)  # TODO: must also column correct join
     test_noise_1 = gen_noise(args.crossover_samples, args.latent)
     test_noise_2 = gen_noise(args.crossover_samples, args.latent)
     test_noise_3 = gen_noise(args.crossover_samples, args.latent)
@@ -130,17 +137,62 @@ def crossover(pol1, pol2, pol3):
     fake_data_2 = G_2(d_noise).detach()
     fake_data_3 = G_3(d_noise).detach()
 
-    # joint_fake_data = we need to join together the data that is being generated using the correct column indexing aka add 0's where no prediction
+    # Format back into their appropriate columns
+    d_1 = torch.zeros(72)
+    d_2 = torch.zeros(72)
+    d_3 = torch.zeros(72)
 
-    # For each generated feature col, choose the col that maximizes according to NN_eval (stochastic gradient descent)
+    d_1[:,p_1[1]] = fake_data_1
+    d_2[:,p_2[1]] = fake_data_2
+    d_3[:,p_3[1]] = fake_data_3
+
+    # Also format the datasets back into their appropriate columns
+    jp_1 = torch.zeros(72)
+    jp_2 = torch.zeros(72)
+    jp_3 = torch.zeros(72)
+
+    jp_1[:,p_1[1]] = p_1[0]
+    jp_2[:,p_2[1]] = p_2[0]
+    jp_3[:,p_3[1]] = p_3[0]
+
+    joint_partition = torch.cat((p_1[0], p_2[0], p_3[0]), dim=1)
+
+    # ======================================================================== #
+    # Construction Zone:
+    #   We need to build an optimizer to optimize for low emittance value
+    #   selecting from column values either from d_1, d_2 or d_3 for each
+    #   column
+    # ======================================================================== #
+    # N =
+    # if args.optim == 'Adam':
+    #     optimizer = optim.Adam(N.parameters(), lr=args.d_learning_rate)
+    # else:
+    #     optimizer = optim.SGD(N.parameters(), lr=args.d_learning_rate)
+
+    # For each generated feature col, choose the col that maximizes according to NN_eval (stochastic gradient descent or adam)
         # After this, we already have a sub-GAN which is SGD optimized GAN combination
         # This is what Michael was originally interested in investigating
         # The only problem is this is not a single GAN, so we cannot add it to a population and iterate
         # Print the results (i.e. mean emittance for the crossover) for sure!
+    # ======================================================================== #
+    # Construction Zone:
+    #   We need to build an optimizer to optimize for low emittance value
+    #   selecting from column values either from d_1, d_2 or d_3 for each
+    #   column
+    # ======================================================================== #
 
-    # experimental: concat joint_partition with gen_partition, and sample the top 20% to make the new partition
-    top_partition = torch.cat((joint_partition, gen_partition), dim=0)
-    # for each row in top_partition, get the emittance value, and then select the top 20% rows by emittance value
+    joint_partition = torch.cat((joint_partition, gen_partition), dim=0)
+    # ======================================================================== #
+    # Construction Zone:
+    #   We need to create a new tensor to only choose rows that have top 20%
+    #   emittance values. Do this using tensor math only so fast
+    # ======================================================================== #
+    # TODO: for each row in top_partition, get the emittance value, and then select the top 20% rows by emittance value
+    # ======================================================================== #
+    # Construction Zone:
+    #   We need to create a new tensor to only choose rows that have top 20%
+    #   emittance values. Do this using tensor math only so fast
+    # ======================================================================== #
 
     # Now that we have a new dataset, train a new GAN on it for imitation learning GAN.
     # This takes it a step further by allowing multiple epochs of GPO
