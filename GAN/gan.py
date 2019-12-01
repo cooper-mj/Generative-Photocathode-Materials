@@ -19,25 +19,25 @@ from torchvision import transforms, datasets
 # ==============================================================================
 # Data sampler for Particles
 # ==============================================================================
-def batch_dataset(x):
+def batch_dataset(x, batch_size):
     """
     partitions dataset x into args.batch_size batches
     TODO: ensure that x.shape[0] is divisible by batch_size so no leftovers
     """
-    partitioned = np.split(x, args.batch_size)
+    partitioned = np.split(x, batch_size)
     return partitioned
 
 
-def gen_noise(sample_size):
+def gen_noise(sample_size, latent):
     """
     Sample a sample_size noise tensors, each with latent elements
     """
-    return Variable(torch.randn(sample_size, args.latent))
+    return Variable(torch.randn(sample_size, latent))
 
 # ==============================================================================
 # Train loop
 # ==============================================================================
-def get_optimizers():
+def get_optimizers(args):
     """
     Note, our latent representation vector for our 72-dimensional particles is
     dimension 8
@@ -103,16 +103,18 @@ def train_generator(D, g_optimizer, loss, fake_data):
     g_optimizer.step()
     return error
 
-def train(dataloader, num_batches, num_particle_samples=100, G=None, D=None):
+def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=None):
+    if set_args:
+        args = set_args
     logger = Logger(model_name='GAN', data_name='Particles')
     loss = nn.BCELoss()  # Utilizing Binary Cross Entropy Loss
     if not G and not D:
-        G, D, d_optimizer, g_optimizer = get_optimizers()
+        G, D, d_optimizer, g_optimizer = get_optimizers(args)
     else:
-        _, _, d_optimizer, g_optimizer = get_optimizers()
+        _, _, d_optimizer, g_optimizer = get_optimizers(args)
 
     # Sample particles to examine progress
-    test_noise = gen_noise(num_particle_samples)
+    test_noise = gen_noise(num_particle_samples, args.latent)
 
     for epoch in range(args.num_epochs):
         for n_batch, real_particle_batch in enumerate(X):
@@ -121,14 +123,14 @@ def train(dataloader, num_batches, num_particle_samples=100, G=None, D=None):
 
             # Train the discriminator once
             real_data = Variable(real_particle_batch)  # gets a single row from the particles data
-            d_noise = gen_noise(N)  # generate a batch of noise vectors
+            d_noise = gen_noise(N, args.latent)  # generate a batch of noise vectors
             fake_data = G(d_noise).detach()
 
             total_d_error, d_pred_real, d_pred_fake = train_discriminator(D, d_optimizer, loss, real_data, fake_data)
 
             # Train the generator 5 times for every 1 time we train the discriminator
             for d_step in range(5):
-                g_noise = gen_noise(N)
+                g_noise = gen_noise(N, args.latent)
                 fake_data = G(g_noise)
                 g_error = train_generator(D, g_optimizer, loss, fake_data)
 
@@ -160,7 +162,7 @@ def train(dataloader, num_batches, num_particle_samples=100, G=None, D=None):
     return G, D, sample_particle, prediction
 
 
-if __name__ == "__main__":
+def local_parser():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--latent', type=int, default=8, help="Latent representation size")
     parser.add_argument('--g_input_size', type=int, default=8, help="Random noise dimension coming into generator, per output vector")
@@ -185,11 +187,16 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, default=10)
 
     args = parser.parse_args()
+    return args
+
+
+if __name__ == "__main__":
+    args = local_parser()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     _, X, Y = load_dataset("../unit_cell_data_16.csv")
     print(X.shape)
-    X = batch_dataset(X)
+    X = batch_dataset(X, args.batch_size)
     num_batches = len(X)
 
-    train(X, num_batches)
+    train(X, num_batches, set_args=args)
