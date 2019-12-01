@@ -27,11 +27,16 @@ def get_training_partitions(X):
     # TODO: for an extension, we can sample a number of random datasets
     """
     X = torch.tensor(X, dtype=torch.float32)
-    other_X = X[:,1:7]
-    atomic_X = X[:]  # TODO: partition into the atomic number features, if not col, then 0's
+    other_idx = [i for i in range(1,8)]
+    other_X = X[:,other_idx]
+
+    atomic_idx = [i for i in range(1,73)]
+    atomic_X = X[:]  # TODO: partition into the atomic number features, if not col, then 0's? otherwise, partitions needs to contian column indices
+
+    locations_idx = [i for i in range(1,73)]
     locations_X = X[:]  # TODO: partition into connection features
-    partitions = [atomic_X, locations_X, other_X]
-    return partitions
+
+    return [(other_X, other_idx), (atomic_X, atomic_idx), (locations_X, locations_idx)]
 
 
 def init_population(X, num_batches):
@@ -43,7 +48,7 @@ def init_population(X, num_batches):
     population = dict()
     for i, partition in enumerate(partitions):
         G, D, _, evaluations = train(
-            partition,
+            partition[0],
             num_batches,
             args.num_particle_samples,
             set_args=args
@@ -67,7 +72,7 @@ def mutate(population, num_batches, generation):
     i = 0
     for label, map in population.items():
         G, D, _, evaluations = train(
-            map['partition'],
+            map['partition'][0],
             num_batches,
             args.num_particle_samples,
             G=map['generator'],
@@ -103,7 +108,9 @@ def crossover(pol1, pol2, pol3):
     Genetic operator that crosses together two GANs trained separately
     Specifically for our case, we note our child GANS train on different parts
     of the dataset. Hence, we combine to create a new good dataset extension
-    to match with a new student GAN
+    to match with a new student GAN.
+
+    We choose the crossover to operate on 3 GANs for the initial combination of the dataset
     """
     G_1 = pol1['generator']
     p_1 = pol1['partition']
@@ -114,7 +121,7 @@ def crossover(pol1, pol2, pol3):
     G_3 = pol3['generator']
     p_3 = pol3['partition']
 
-    joint_partition = torch.cat((p_1, p_2, p_3), dim=0)
+    # joint_partition = torch.cat((p_1[0], p_2[0], p_3[0]), dim=0)  # TODO: must also column correct join
     test_noise_1 = gen_noise(args.crossover_samples, args.latent)
     test_noise_2 = gen_noise(args.crossover_samples, args.latent)
     test_noise_3 = gen_noise(args.crossover_samples, args.latent)
@@ -123,20 +130,31 @@ def crossover(pol1, pol2, pol3):
     fake_data_2 = G_2(d_noise).detach()
     fake_data_3 = G_3(d_noise).detach()
 
-    # joint_fake_data = we need to join together the data that is being generated using the correct column indexing
+    # joint_fake_data = we need to join together the data that is being generated using the correct column indexing aka add 0's where no prediction
 
     # For each generated feature col, choose the col that maximizes according to NN_eval (stochastic gradient descent)
         # After this, we already have a sub-GAN which is SGD optimized GAN combination
         # This is what Michael was originally interested in investigating
-        # We can add this to population if it actually does better
+        # The only problem is this is not a single GAN, so we cannot add it to a population and iterate
+        # Print the results (i.e. mean emittance for the crossover) for sure!
 
-    # Now that we have a new dataset, train a new GAN on it for imitation learning GAN. This takes it a step further by allowing multiple epochs of GPO
-    pass
+    # experimental: concat joint_partition with gen_partition, and sample the top 20% to make the new partition
+    top_partition = torch.cat((joint_partition, gen_partition), dim=0)
+    # for each row in top_partition, get the emittance value, and then select the top 20% rows by emittance value
+
+    # Now that we have a new dataset, train a new GAN on it for imitation learning GAN.
+    # This takes it a step further by allowing multiple epochs of GPO
+    return train(
+        top_partition,
+        num_batches,
+        args.num_particle_samples,
+        set_args=args
+    )
 
 
 def breed(parents, population):
     """
-    Runs crossover and dagger_distillation on pairs of fit parents
+    Runs crossover and 'dagger'_distillation on pairs of fit parents
     """
     children = dict()
 
@@ -214,7 +232,7 @@ if __name__ == "__main__":
     parser.add_argument('--sgd_momentum', type=float, default=0.9)
 
     parser.add_argument('--num_epochs', type=int, default=200)
-    parser.add_argument('--print_interval', type=int, default=10)
+    parser.add_argument('--print_interval', type=int, default=200)
 
     parser.add_argument('--optim', type=str, default='SGD')
     parser.add_argument('--batch_size', type=int, default=10)
