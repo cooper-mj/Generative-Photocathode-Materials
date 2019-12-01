@@ -9,7 +9,7 @@ import torch.optim as optim
 import pickle
 
 from discriminator import Discriminator
-from gan import load_dataset, batch_dataset, train
+from gan import load_dataset, batch_dataset, train, gen_noise
 from generator import Generator
 from utils import load_dataset
 from logger_utils import Logger
@@ -27,9 +27,9 @@ def get_training_partitions(X):
     # TODO: for an extension, we can sample a number of random datasets
     """
     X = torch.tensor(X, dtype=torch.float32)
-    atomic_X = X[:]  # TODO: partition into the atomic number features
-    locations_X = X[:]  # TODO: partition into connection features
     other_X = X[:,1:7]
+    atomic_X = X[:]  # TODO: partition into the atomic number features, if not col, then 0's
+    locations_X = X[:]  # TODO: partition into connection features
     partitions = [atomic_X, locations_X, other_X]
     return partitions
 
@@ -90,23 +90,47 @@ def select_fittest(population, k):
     Select k fittest GANs
     TODO: debug this function
     """
-    sorted_population = sorted(population.items(), key=lambda kv: kv[1]['emittance'])[:k]  # results in a list of tuples
+    if len(population) <= k:
+        sorted_population = sorted(population.items(), key=lambda kv: kv[1]['emittance'])[:k]  # results in a list of tuples
+    else:
+        sorted_population = population
     parents = {tuple[0]: tuple[1] for tuple in sorted_population}
     return parents
 
 
-def crossover(pol1, pol2):
+def crossover(pol1, pol2, pol3):
     """
     Genetic operator that crosses together two GANs trained separately
+    Specifically for our case, we note our child GANS train on different parts
+    of the dataset. Hence, we combine to create a new good dataset extension
+    to match with a new student GAN
     """
-    pass
+    G_1 = pol1['generator']
+    p_1 = pol1['partition']
 
+    G_2 = pol2['generator']
+    p_2 = pol2['partition']
 
-def dagger(crossover_pol):
-    """
-    Uses imitation learning DAGGER to distill a crossover_policy into a child
-    policy with the same architecture as the original GAN
-    """
+    G_3 = pol3['generator']
+    p_3 = pol3['partition']
+
+    joint_partition = torch.cat((p_1, p_2, p_3), dim=0)
+    test_noise_1 = gen_noise(args.crossover_samples, args.latent)
+    test_noise_2 = gen_noise(args.crossover_samples, args.latent)
+    test_noise_3 = gen_noise(args.crossover_samples, args.latent)
+
+    fake_data_1 = G_1(d_noise).detach()
+    fake_data_2 = G_2(d_noise).detach()
+    fake_data_3 = G_3(d_noise).detach()
+
+    # joint_fake_data = we need to join together the data that is being generated using the correct column indexing
+
+    # For each generated feature col, choose the col that maximizes according to NN_eval (stochastic gradient descent)
+        # After this, we already have a sub-GAN which is SGD optimized GAN combination
+        # This is what Michael was originally interested in investigating
+        # We can add this to population if it actually does better
+
+    # Now that we have a new dataset, train a new GAN on it for imitation learning GAN. This takes it a step further by allowing multiple epochs of GPO
     pass
 
 
@@ -116,16 +140,15 @@ def breed(parents, population):
     """
     children = dict()
 
-    pairs = list(itertools.combinations(parents.items(), 2))
-    while len(population) - len(pairs) > 0:
-        pairs.append(random.choice(pairs))
-    if len(pairs) - len(population) > 0:
-        pairs = random.sample(pairs, len(population))
+    triplets = list(itertools.combinations(parents.items(), 3))
+    while len(population) - len(triplets) > 0:
+        triplets.append(random.choice(triplets))
+    if len(triplets) - len(population) > 0:
+        triplets = random.sample(triplets, len(population))
 
     w = 0
-    for p1, p2 in pairs:
-        cross_pol = crossover(p1, p2)
-        G, D, _, evaluations = dagger(cross_pol)
+    for p1, p2, p3 in triplets:
+        G, D, _, evaluations = crossover(p1, p2, p3)
         MLE_emittance = torch.mean(evaluations)
 
         children['cross%d' % w] = {
@@ -146,6 +169,9 @@ def train_GPO_GAN(X, Y, num_batches, k, r):
         we distill a GAN trained on atomic numbers and a GAN trained on connections
         into a binary GAN policy and train a student using a framework similar
         to GPO (https://arxiv.org/pdf/1711.01012.pdf)
+
+    We have modified this framework specifically to train GANs on various parts
+    of the dataset separately.
     """
     population = init_population(X, num_batches)
     epoch = 0
@@ -196,6 +222,8 @@ if __name__ == "__main__":
     parser.add_argument('--k', type=int, default=5, help="Number of GANs to select teacher from")
     parser.add_argument('--num_particle_samples', type=int, default=100, help="Number of sample particles to aggregate fitness estimate over")
     parser.add_argument('--r_epochs', type=int, default=3, help="Number of epochs of GPO")
+
+    parser.add_argument('--crossover_samples', type=int, default=1000, help="number of samples for crossover")
 
     args = parser.parse_args()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
