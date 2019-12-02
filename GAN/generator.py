@@ -1,3 +1,4 @@
+import math
 import torch
 import torch.nn as nn
 
@@ -11,24 +12,24 @@ class Generator(nn.Module):
         self.p = p
 
         self.h0 = nn.Sequential(
-            nn.Linear(input_size, int(hidden_size/4)),
+            nn.Linear(input_size, int(math.ceil(hidden_size/4))),
             nn.LeakyReLU(self.p)
         )
         self.h1 = nn.Sequential(
-            nn.Linear(int(hidden_size/4), int(hidden_size)),
+            nn.Linear(int(math.ceil(hidden_size/4)), int(hidden_size)),
             nn.LeakyReLU(self.p)
         )
         self.h2 = nn.Sequential(
-            nn.Linear(int(hidden_size), int(hidden_size/2)),
+            nn.Linear(int(hidden_size), int(math.ceil(hidden_size/2))),
             nn.LeakyReLU(self.p)
         )
         self.h3 = nn.Sequential(
-            nn.Linear(int(hidden_size/2), hidden_size)
+            nn.Linear(int(math.ceil(hidden_size/2)), hidden_size)
         )
         self.out = nn.Sequential(
             nn.Linear(hidden_size, output_size)
         )
-        
+
     def forward(self, x):
         x = self.h0(x)
         x = self.h1(x)

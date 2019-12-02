@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import torch
 import torch.nn as nn
@@ -20,19 +21,19 @@ class Discriminator(nn.Module):
         )
         # Transform 32-dimensional particle to 16-dimensional particle
         self.h1 = nn.Sequential(
-            nn.Linear(hidden_size, int(hidden_size/2)),
+            nn.Linear(hidden_size, int(math.ceil(hidden_size/2))),
             nn.LeakyReLU(self.p),
             nn.Dropout(self.dropout)
         )
         # Transform 16-dimensional particle to 8-dimensional particle
         self.h2 = nn.Sequential(
-            nn.Linear(int(hidden_size/2), int(hidden_size/4)),
+            nn.Linear(int(math.ceil(hidden_size/2)), int(math.ceil(hidden_size/4))),
             nn.LeakyReLU(self.p),
             nn.Dropout(self.dropout)
         )
         # Sigmoid activation for binary prediction
         self.out = nn.Sequential(
-            torch.nn.Linear(int(hidden_size/4), output_size),
+            torch.nn.Linear(int(math.ceil(hidden_size/4)), output_size),
             torch.nn.Sigmoid()
         )
 

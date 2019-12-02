@@ -2,6 +2,7 @@
 
 import argparse
 import itertools
+import math
 import numpy as np
 import random
 import torch
@@ -29,14 +30,14 @@ def get_training_partitions(X):
     """
     X = torch.tensor(X, dtype=torch.float32)
 
-    other_idx = [i for i in range(1,8)]
-    other_X = X[:,other_idx]
+    other_idx = [i for i in range(0,7)]
+    other_X = X[:,:,other_idx]
 
-    atomic_idx = [i for i in range(8,72,4)]
-    atomic_X = X[:,atomic_idx]
+    atomic_idx = [i for i in range(7,71,4)]
+    atomic_X = X[:,:,atomic_idx]
 
-    locations_idx = [i for i in range(9,72) if i % 4 != 0]
-    locations_X = X[:,locations_idx]
+    locations_idx = [i for i in range(8,71) if i % 4 != 3]
+    locations_X = X[:,:,locations_idx]
 
     return [(other_X, other_idx), (atomic_X, atomic_idx), (locations_X, locations_idx)]
 
@@ -49,11 +50,19 @@ def init_population(X, num_batches):
     generation = 0
     population = dict()
     for i, partition in enumerate(partitions):
+        spec_args = args
+        spec_args.g_input_size = args.latent
+        spec_args.g_output_size = len(partition)
+        spec_args.g_hidden_size = int(math.ceil(spec_args.g_output_size / 2))
+        spec_args.d_input_size = len(partition)
+        spec_args.d_hidden_size = int(math.ceil(spec_args.d_input_size / 2))
+
+        print(partition[0].shape)
         G, D, _, evaluations = train(
             partition[0],
             num_batches,
             args.num_particle_samples,
-            set_args=args
+            set_args=spec_args
         )
         MLE_emittance = torch.mean(evaluations)
         population['gen%dpartition%d' % (generation, i)] = {
