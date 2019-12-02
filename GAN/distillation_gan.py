@@ -27,22 +27,15 @@ def get_training_partitions(X):
     # TODO: for an extension, we can sample a number of random datasets
     """
     X = torch.tensor(X, dtype=torch.float32)
+
     other_idx = [i for i in range(1,8)]
     other_X = X[:,other_idx]
 
-    # ======================================================================== #
-    # Construction Zone:
-    #   We need to select the indices corresponding to atomic id and locations
-    # ======================================================================== #
-    atomic_idx = [i for i in range(1,73)] # TODO
+    atomic_idx = [i for i in range(8,72,4)]
     atomic_X = X[:,atomic_idx]
 
-    locations_idx = [i for i in range(1,73)] # TODO
+    locations_idx = [i for i in range(9,72) if i % 4 != 0] 
     locations_X = X[:,locations_idx]
-    # ======================================================================== #
-    # Construction Zone:
-    #   We need to select the indices corresponding to atomic id and locations
-    # ======================================================================== #
 
     return [(other_X, other_idx), (atomic_X, atomic_idx), (locations_X, locations_idx)]
 
@@ -68,7 +61,6 @@ def init_population(X, num_batches):
             'emittance': MLE_emittance,
             'partition': partition
         }
-    print('Initialized the population!\n')
     return population
 
 
@@ -138,18 +130,18 @@ def crossover(pol1, pol2, pol3):
     fake_data_3 = G_3(d_noise).detach()
 
     # Format back into their appropriate columns
-    d_1 = torch.zeros(72)
-    d_2 = torch.zeros(72)
-    d_3 = torch.zeros(72)
+    d_1 = torch.zeros(71)
+    d_2 = torch.zeros(71)
+    d_3 = torch.zeros(71)
 
     d_1[:,p_1[1]] = fake_data_1
     d_2[:,p_2[1]] = fake_data_2
     d_3[:,p_3[1]] = fake_data_3
 
     # Also format the datasets back into their appropriate columns
-    jp_1 = torch.zeros(72)
-    jp_2 = torch.zeros(72)
-    jp_3 = torch.zeros(72)
+    jp_1 = torch.zeros(71)
+    jp_2 = torch.zeros(71)
+    jp_3 = torch.zeros(71)
 
     jp_1[:,p_1[1]] = p_1[0]
     jp_2[:,p_2[1]] = p_2[0]
