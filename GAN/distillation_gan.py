@@ -3,6 +3,7 @@
 import argparse
 import itertools
 import numpy as np
+import random
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -34,7 +35,7 @@ def get_training_partitions(X):
     atomic_idx = [i for i in range(8,72,4)]
     atomic_X = X[:,atomic_idx]
 
-    locations_idx = [i for i in range(9,72) if i % 4 != 0] 
+    locations_idx = [i for i in range(9,72) if i % 4 != 0]
     locations_X = X[:,locations_idx]
 
     return [(other_X, other_idx), (atomic_X, atomic_idx), (locations_X, locations_idx)]
@@ -90,7 +91,7 @@ def mutate(population, num_batches, generation):
     return population
 
 
-def select_fittest(population, k):
+def select_k_fittest(population, k):
     """
     Select k fittest GANs
     TODO: debug this function
@@ -125,15 +126,19 @@ def crossover(pol1, pol2, pol3):
     test_noise_2 = gen_noise(args.crossover_samples, args.latent)
     test_noise_3 = gen_noise(args.crossover_samples, args.latent)
 
-    fake_data_1 = G_1(d_noise).detach()
-    fake_data_2 = G_2(d_noise).detach()
-    fake_data_3 = G_3(d_noise).detach()
+    fake_data_1 = G_1(test_noise_1).detach()
+    fake_data_2 = G_2(test_noise_2).detach()
+    fake_data_3 = G_3(test_noise_3).detach()
+
+    print(fake_data_1)
 
     # Format back into their appropriate columns
     d_1 = torch.zeros(71)
     d_2 = torch.zeros(71)
     d_3 = torch.zeros(71)
 
+    print(p_1[1])
+    print(d_1)
     d_1[:,p_1[1]] = fake_data_1
     d_2[:,p_2[1]] = fake_data_2
     d_3[:,p_3[1]] = fake_data_3
@@ -202,7 +207,7 @@ def breed(parents, population):
     """
     children = dict()
 
-    triplets = list(itertools.combinations(parents.items(), 3))
+    triplets = list(itertools.combinations(parents.values(), 3))
     while len(population) - len(triplets) > 0:
         triplets.append(random.choice(triplets))
     if len(triplets) - len(population) > 0:
