@@ -138,17 +138,17 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
 
             # Run logging to examine progress
             logger.log(total_d_error, g_error, epoch, n_batch, num_batches)
-            if (n_batch % args.print_interval) == 0:
-                logger.display_status(
-                    epoch,
-                    args.num_epochs,
-                    n_batch,
-                    num_batches,
-                    total_d_error,
-                    g_error,
-                    d_pred_real,
-                    d_pred_fake
-                )
+            # if (n_batch % args.print_interval) == 0:
+            #     logger.display_status(
+            #         epoch,
+            #         args.num_epochs,
+            #         n_batch,
+            #         num_batches,
+            #         total_d_error,
+            #         g_error,
+            #         d_pred_real,
+            #         d_pred_fake
+            #     )
     # Import the evaluator NN
     file = open('NN_evaluator.sav', 'rb')
     clf = pk.load(file)
