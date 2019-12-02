@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import pickle
+import pickle as pk
 
 from discriminator import Discriminator
 from generator import Generator
@@ -150,7 +150,7 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
                     d_pred_fake
                 )
     # Import the evaluator NN
-    clf = pickle.load(open('NN_evaluator.sav', 'rb'))
+    clf = pk.load(open('NN_evaluator.sav', 'rb'))
     # Generate a test particle
     sample_particle = G(test_noise)
     # Evaluator predicts on that particle
