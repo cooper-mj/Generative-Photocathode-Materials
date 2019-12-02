@@ -15,6 +15,8 @@ from matplotlib import pyplot as plt
 from torch.autograd import Variable
 from torchvision import transforms, datasets
 
+from sklearn.neural_network import MLPClassifier
+
 
 # ==============================================================================
 # Data sampler for Particles
