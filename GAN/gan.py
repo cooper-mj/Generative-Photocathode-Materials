@@ -152,17 +152,20 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
     # Import the evaluator NN
     file = open('NN_evaluator.sav', 'rb')
     clf = pk.load(file)
+
     # Generate a test particle
     sample_particle = G(test_noise)
     # Evaluator predicts on that particle
-    sample_particle = sample_particle.detach().numpy()
-    prediction = torch.tensor(clf.predict(sample_particle), dtype=torch.float32)
+    # sample_particle = sample_particle.detach().numpy()
+    # print(sample_particle.shape)
+    # prediction = torch.tensor(clf.predict(sample_particle), dtype=torch.float32)
     # Printout
     # print("Generated Example Particles")
     # print(sample_particle)
     # print("Example Particle Predictions")
     # print(prediction)
-    return G, D, sample_particle, prediction
+    # return G, D, sample_particle, prediction
+    return G, D, sample_particle, torch.tensor(0, dtype=torch.float32)
 
 
 def local_parser():

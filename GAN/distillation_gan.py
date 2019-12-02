@@ -52,12 +52,11 @@ def init_population(X, num_batches):
     for i, partition in enumerate(partitions):
         spec_args = args
         spec_args.g_input_size = args.latent
-        spec_args.g_output_size = len(partition)
+        spec_args.g_output_size = len(partition[1])
         spec_args.g_hidden_size = int(math.ceil(spec_args.g_output_size / 2))
-        spec_args.d_input_size = len(partition)
+        spec_args.d_input_size = len(partition[1])
         spec_args.d_hidden_size = int(math.ceil(spec_args.d_input_size / 2))
 
-        print(partition[0].shape)
         G, D, _, evaluations = train(
             partition[0],
             num_batches,
@@ -68,7 +67,7 @@ def init_population(X, num_batches):
         population['gen%dpartition%d' % (generation, i)] = {
             'generator': G,
             'discriminator': D,
-            'emittance': MLE_emittance,
+            'emittance': MLE_emittance,  # TODO: WE only obtain an emittance value if it is compatible with 71
             'partition': partition
         }
     return population
@@ -144,22 +143,20 @@ def crossover(pol1, pol2, pol3):
     d_2 = torch.zeros(args.crossover_samples, 71)
     d_3 = torch.zeros(args.crossover_samples, 71)
 
-    print(fake_data_1.shape)
-    print(d_1[:,p_1[1]].shape)
     d_1[:,p_1[1]] = fake_data_1
     d_2[:,p_2[1]] = fake_data_2
     d_3[:,p_3[1]] = fake_data_3
 
     # Also format the datasets back into their appropriate columns
-    jp_1 = torch.zeros(71)
-    jp_2 = torch.zeros(71)
-    jp_3 = torch.zeros(71)
+    jp_1 = torch.zeros(p_1[0].shape[0], p_1[0].shape[1], 71)
+    jp_2 = torch.zeros(p_2[0].shape[0], p_2[0].shape[1], 71)
+    jp_3 = torch.zeros(p_3[0].shape[0], p_3[0].shape[1], 71)
 
-    jp_1[:,p_1[1]] = p_1[0]
-    jp_2[:,p_2[1]] = p_2[0]
-    jp_3[:,p_3[1]] = p_3[0]
+    jp_1[:,:,p_1[1]] = p_1[0]
+    jp_2[:,:,p_2[1]] = p_2[0]
+    jp_3[:,:,p_3[1]] = p_3[0]
 
-    joint_partition = torch.cat((p_1[0], p_2[0], p_3[0]), dim=1)
+    joint_partition = jp_1[0] + jp_2[0] + jp_3[0]
 
     # ======================================================================== #
     # Construction Zone:
