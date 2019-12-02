@@ -61,7 +61,8 @@ def init_population(X, num_batches):
             partition[0],
             num_batches,
             args.num_particle_samples,
-            set_args=spec_args
+            set_args=spec_args,
+            train_cols=partition[1]
         )
         MLE_emittance = torch.mean(evaluations)
         population['gen%dpartition%d' % (generation, i)] = {
@@ -86,7 +87,8 @@ def mutate(population, num_batches, generation):
             args.num_particle_samples,
             G=map['generator'],
             D=map['discriminator'],
-            set_args=args
+            set_args=args,
+            train_cols=map['partition'][1]
         )
         MLE_emittance = torch.mean(evaluations)
         population['gen%dpartition%d' % (generation, i)] = {
@@ -201,7 +203,8 @@ def crossover(pol1, pol2, pol3):
         top_partition,
         num_batches,
         args.num_particle_samples,
-        set_args=args
+        set_args=args,
+        train_cols=p_1[1] + p_2[1] + p_3[1]
     )
 
 
