@@ -19,6 +19,16 @@ from sklearn.neural_network import MLPClassifier
 
 
 # ==============================================================================
+# Nonsaturating Loss Function
+# ==============================================================================
+def loss_function(G, D, fake_data, real_data):
+
+
+    d_loss = -torch.mean(nn.functional.logsigmoid(D(real_data))) - torch.mean(torch.log(1 - torch.sigmoid(D(fake_data))))
+    
+    g_loss = -torch.mean(nn.functional.logsigmoid(D(fake_data)))
+    return d_loss, g_loss
+# ==============================================================================
 # Data sampler for Particles
 # ==============================================================================
 def batch_dataset(x, batch_size):
@@ -70,7 +80,7 @@ def get_optimizers(args):
         g_optimizer = optim.SGD(G.parameters(), lr=args.g_learning_rate, momentum=args.sgd_momentum)
     return G, D, d_optimizer, g_optimizer
 
-def train_discriminator(D, d_optimizer, loss, real_data, fake_data):
+def train_discriminator(D, G, d_optimizer, loss, real_data, fake_data):
     """
     Trains the Discriminator for one step
     """
@@ -79,18 +89,19 @@ def train_discriminator(D, d_optimizer, loss, real_data, fake_data):
 
     # Train D on real data
     pred_real = D(real_data)
-    error_real = loss(pred_real, Variable(torch.ones(N, 1)))
+    error_real, _ = loss_function(G, D, real_data, fake_data)
+
     error_real.backward()
 
     # Train on fake data
     pred_fake = D(fake_data)
-    error_fake = loss(pred_fake, Variable(torch.zeros(N, 1)))
+    _, error_fake = loss_function(G, D, real_data, fake_data)
     error_fake.backward()
 
     d_optimizer.step()
     return error_real + error_fake, pred_real, pred_fake
 
-def train_generator(D, g_optimizer, loss, fake_data):
+def train_generator(D, G, g_optimizer, loss, real_data, fake_data):
     """
     Trains the Generator for one step
     """
@@ -100,8 +111,9 @@ def train_generator(D, g_optimizer, loss, fake_data):
     # predict against fake data
     pred = D(fake_data)
 
-    error = loss(pred, Variable(torch.ones(N, 1)))
-    error.backward()
+    _, error = loss_function(G, D, real_data, fake_data)
+    # error = loss(pred, Variable(torch.ones(N, 1)))
+    # error.backward()
     g_optimizer.step()
     return error
 
@@ -128,13 +140,13 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
             d_noise = gen_noise(N, args.latent)  # generate a batch of noise vectors
             fake_data = G(d_noise).detach()
 
-            total_d_error, d_pred_real, d_pred_fake = train_discriminator(D, d_optimizer, loss, real_data, fake_data)
+            total_d_error, d_pred_real, d_pred_fake = train_discriminator(D, G, d_optimizer, loss, real_data, fake_data)
 
             # Train the generator 5 times for every 1 time we train the discriminator
             for d_step in range(5):
                 g_noise = gen_noise(N, args.latent)
                 fake_data = G(g_noise)
-                g_error = train_generator(D, g_optimizer, loss, fake_data)
+                g_error = train_generator(D, G, g_optimizer, loss, real_data, fake_data)
 
             # Run logging to examine progress
             logger.log(total_d_error, g_error, epoch, n_batch, num_batches)
