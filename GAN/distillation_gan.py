@@ -8,7 +8,7 @@ import random
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import pickle
+import pickle as pk
 
 from discriminator import Discriminator
 from gan import load_dataset, batch_dataset, train, gen_noise
@@ -111,14 +111,9 @@ def select_k_fittest(population, k):
     return population
 
 
-def crossover(pol1, pol2, pol3):
+def reshape_generator_output(p1, p2, p3):
     """
-    Genetic operator that crosses together two GANs trained separately
-    Specifically for our case, we note our child GANS train on different parts
-    of the dataset. Hence, we combine to create a new good dataset extension
-    to match with a new student GAN.
-
-    We choose the crossover to operate on 3 GANs for the initial combination of the dataset
+    Reshapes the output of generators that do not match the original output size
     """
     G_1 = pol1['generator']
     p_1 = pol1['partition']
@@ -156,7 +151,44 @@ def crossover(pol1, pol2, pol3):
     jp_3[:,:,p_3[1]] = p_3[0]
 
     joint_partition = jp_1.add_(jp_2.add_(jp_3))
+    return joint_partition, d_1, d_2, d_3
 
+
+def sample_top_paths(joint_partition, gen_partition):
+    """
+    Samples the top 50% of training samples from GPO and the previous dataset
+
+        # Commented out code prints what the top particle representations are
+        # for particle in ind:
+        #     print(dataset_particles[ind,:])
+    """
+    joint_partition = torch.cat((joint_partition, gen_partition), dim=0)
+
+    file = open('NN_evaluator.sav', 'rb')
+    clf = pk.load(file)
+
+    dataset_particles = joint_partition.view(-1, 71)
+    percentile_index = math.floor(dataset_particles.shape[0]/2)
+
+    dataset_particles = dataset_particles.detach().numpy()
+    prediction = torch.tensor(clf.predict(dataset_particles), dtype=torch.float32)
+    res, ind = prediction.topk(percentile_index, largest=False)
+
+    # There may be a bug later where this fails. That would be because i did batching jankily long ago, fix it
+    top_partition = batch_dataset(dataset_particles[ind,:], args.batch_size)
+    return torch.tensor(top_partition, dtype=torch.float32)
+
+
+def crossover(pol1, pol2, pol3):
+    """
+    Genetic operator that crosses together two GANs trained separately
+    Specifically for our case, we note our child GANS train on different parts
+    of the dataset. Hence, we combine to create a new good dataset extension
+    to match with a new student GAN.
+
+    We choose the crossover to operate on 3 GANs for the initial combination of the dataset
+    """
+    joint_partition, d_1, d_2, d_3 = reshape_generator_output(pol1, pol2, pol3)
     # ======================================================================== #
     # Construction Zone:
     #   We need to build an optimizer to optimize for low emittance value
@@ -164,11 +196,12 @@ def crossover(pol1, pol2, pol3):
     #   column
     # ======================================================================== #
     gen_partition = torch.zeros(10, 457, 71)
+    # ======================================================================== #
     # N =
-    # if args.optim == 'Adam':
-    #     optimizer = optim.Adam(N.parameters(), lr=args.d_learning_rate)
-    # else:
-    #     optimizer = optim.SGD(N.parameters(), lr=args.d_learning_rate)
+    if args.optim == 'Adam':
+        optimizer = optim.Adam(N.parameters(), lr=args.d_learning_rate)
+    else:
+        optimizer = optim.SGD(N.parameters(), lr=args.d_learning_rate)
 
     # For each generated feature col, choose the col that maximizes according to NN_eval (stochastic gradient descent or adam)
         # After this, we already have a sub-GAN which is SGD optimized GAN combination
@@ -181,23 +214,9 @@ def crossover(pol1, pol2, pol3):
     #   selecting from column values either from d_1, d_2 or d_3 for each
     #   column
     # ======================================================================== #
-
-    joint_partition = torch.cat((joint_partition, gen_partition), dim=0)
-    # ======================================================================== #
-    # Construction Zone:
-    #   We need to create a new tensor to only choose rows that have top 20%
-    #   emittance values. Do this using tensor math only so fast
-    # ======================================================================== #
-    top_partition = joint_partition
-    # TODO: for each row in top_partition, get the emittance value, and then select the top 20% rows by emittance value
-    # ======================================================================== #
-    # Construction Zone:
-    #   We need to create a new tensor to only choose rows that have top 20%
-    #   emittance values. Do this using tensor math only so fast
-    # ======================================================================== #
+    top_partition = sample_top_paths(joint_partition, gen_partition)
 
     # Now that we have a new dataset, train a new GAN on it for imitation learning GAN.
-    # This takes it a step further by allowing multiple epochs of GPO
     spec_args = args
     spec_args.g_input_size = args.latent
     spec_args.g_output_size = top_partition.shape[2]
@@ -318,4 +337,4 @@ if __name__ == "__main__":
     num_batches = len(X)
 
     _, _, _, evaluations = train_GPO_GAN(X, Y, num_batches, args.k, args.r_epochs)
-    print('Final disciple has evaluation score of %d' % torch.mean(evaluations))
+    print('Final disciple has evaluation score of %2f' % torch.mean(evaluations))
