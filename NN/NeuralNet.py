@@ -1,4 +1,4 @@
-from sklearn.neural_network import MLPClassifier
+from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import StandardScaler
 
 from load_dataset import load_dataset
@@ -59,17 +59,17 @@ if __name__ == "__main__":
 	# X_train = scaler.transform(X_train)
 	# X_valid = scaler.transform(X_valid)
 	# X_test = scaler.transform(X_test)
+	for i in range(10):
+		clf = MLPRegressor(hidden_layer_sizes=(64, 128, 256, 512, 256, 128, 64), alpha=0.9, tol=0.001, learning_rate_init=0.0008, max_iter=400, n_iter_no_change=10, verbose=True).fit(X_train, Y_train)
+		# clf = MLPClassifier(hidden_layer_sizes=(64, 128, 64), learning_rate_init=0.0008, max_iter=400, n_iter_no_change=10, verbose=True).fit(X_train, Y_train)
+		# save the model to disk
+		filename = 'NN_evaluator_'+str(i)+'.sav'
+		pickle.dump(clf, open(filename, 'wb'))
 
-	clf = MLPClassifier(hidden_layer_sizes=(64, 128, 256, 512, 256, 128, 64), alpha=0.9, tol=0.001, learning_rate_init=0.0008, max_iter=400, n_iter_no_change=10, verbose=True).fit(X_train, Y_train)
-	# clf = MLPClassifier(hidden_layer_sizes=(64, 128, 64), learning_rate_init=0.0008, max_iter=400, n_iter_no_change=10, verbose=True).fit(X_train, Y_train)
-	# save the model to disk
-	filename = 'NN_evaluator.sav'
-	pickle.dump(clf, open(filename, 'wb'))
+	# Y_valid_predictions = np.zeros(len(Y_valid))
+	# for i, example in enumerate(X_valid):
+	# 	Y_valid_predictions[i] = clf.predict(example.reshape(1, -1))
 
-	Y_valid_predictions = np.zeros(len(Y_valid))
-	for i, example in enumerate(X_valid):
-		Y_valid_predictions[i] = clf.predict(example.reshape(1, -1))
-
-	clf = MLPClassifier(hidden_layer_sizes=(128, 256, 512, 256, 128, 64), learning_rate_init = 0.0008, max_iter=300, n_iter_no_change=15, verbose=True) #.fit(X_train, Y_train)
-	accuracy_metric(Y_valid_predictions, Y_valid)
+	# clf = MLPClassifier(hidden_layer_sizes=(128, 256, 512, 256, 128, 64), learning_rate_init = 0.0008, max_iter=300, n_iter_no_change=15, verbose=True) #.fit(X_train, Y_train)
+	# accuracy_metric(Y_valid_predictions, Y_valid)
 	
