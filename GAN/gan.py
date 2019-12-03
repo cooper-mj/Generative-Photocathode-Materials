@@ -168,7 +168,6 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
     # print("Example Particle Predictions")
     # print(prediction)
     return G, D, sample_particle, prediction
-    # return G, D, sample_particle, torch.tensor(0, dtype=torch.float32)
 
 
 def local_parser():
@@ -204,7 +203,6 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     _, X, Y = load_dataset("../unit_cell_data_16.csv")
-    print(X.shape)
     X = batch_dataset(X, args.batch_size)
     num_batches = len(X)
 

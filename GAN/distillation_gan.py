@@ -68,7 +68,7 @@ def init_population(X, num_batches):
         population['gen%dpartition%d' % (generation, i)] = {
             'generator': G,
             'discriminator': D,
-            'emittance': MLE_emittance,  # TODO: WE only obtain an emittance value if it is compatible with 71
+            'emittance': MLE_emittance,
             'partition': partition
         }
     return population
@@ -78,8 +78,8 @@ def mutate(population, num_batches, generation):
     """
     Trains a GAN for each population element
     """
-    population = dict()
     i = 0
+    new_population = dict()
     for label, map in population.items():
         G, D, _, evaluations = train(
             map['partition'][0],
@@ -91,14 +91,14 @@ def mutate(population, num_batches, generation):
             train_cols=map['partition'][1]
         )
         MLE_emittance = torch.mean(evaluations)
-        population['gen%dpartition%d' % (generation, i)] = {
+        new_population['gen%dpartition%d' % (generation, i)] = {
             'generator': G,
             'discriminator': D,
             'emittance': MLE_emittance,
-            'partition': partition
+            'partition': map['partition']
         }
         i += 1
-    return population
+    return new_population
 
 
 def select_k_fittest(population, k):
@@ -106,12 +106,9 @@ def select_k_fittest(population, k):
     Select k fittest GANs
     TODO: debug this function
     """
-    if len(population) <= k:
-        sorted_population = sorted(population.items(), key=lambda kv: kv[1]['emittance'])[:k]  # results in a list of tuples
-    else:
-        sorted_population = population
-    parents = {tuple[0]: tuple[1] for tuple in sorted_population}
-    return parents
+    if len(population) >= k:
+        return sorted(population.values(), key=lambda v: v['emittance'])[:k]  # results in a list of tuples
+    return population
 
 
 def crossover(pol1, pol2, pol3):
@@ -158,7 +155,7 @@ def crossover(pol1, pol2, pol3):
     jp_2[:,:,p_2[1]] = p_2[0]
     jp_3[:,:,p_3[1]] = p_3[0]
 
-    joint_partition = jp_1[0] + jp_2[0] + jp_3[0]
+    joint_partition = jp_1.add_(jp_2.add_(jp_3))
 
     # ======================================================================== #
     # Construction Zone:
@@ -166,6 +163,7 @@ def crossover(pol1, pol2, pol3):
     #   selecting from column values either from d_1, d_2 or d_3 for each
     #   column
     # ======================================================================== #
+    gen_partition = torch.zeros(10, 457, 71)
     # N =
     # if args.optim == 'Adam':
     #     optimizer = optim.Adam(N.parameters(), lr=args.d_learning_rate)
@@ -190,6 +188,7 @@ def crossover(pol1, pol2, pol3):
     #   We need to create a new tensor to only choose rows that have top 20%
     #   emittance values. Do this using tensor math only so fast
     # ======================================================================== #
+    top_partition = joint_partition
     # TODO: for each row in top_partition, get the emittance value, and then select the top 20% rows by emittance value
     # ======================================================================== #
     # Construction Zone:
@@ -199,13 +198,21 @@ def crossover(pol1, pol2, pol3):
 
     # Now that we have a new dataset, train a new GAN on it for imitation learning GAN.
     # This takes it a step further by allowing multiple epochs of GPO
+    spec_args = args
+    spec_args.g_input_size = args.latent
+    spec_args.g_output_size = top_partition.shape[2]
+    spec_args.g_hidden_size = int(math.ceil(spec_args.g_output_size / 2))
+    spec_args.d_input_size = top_partition.shape[2]
+    spec_args.d_hidden_size = int(math.ceil(spec_args.d_input_size / 2))
+    partition_idx = list(set(p_1[1] + p_2[1] + p_3[1]))
+
     return train(
         top_partition,
         num_batches,
         args.num_particle_samples,
-        set_args=args,
-        train_cols=p_1[1] + p_2[1] + p_3[1]
-    )
+        set_args=spec_args,
+        train_cols=partition_idx
+    ), (top_partition, partition_idx)
 
 
 def breed(parents, population):
@@ -221,9 +228,12 @@ def breed(parents, population):
         triplets = random.sample(triplets, len(population))
 
     w = 0
+    gen_best_score = None
     for p1, p2, p3 in triplets:
-        G, D, _, evaluations = crossover(p1, p2, p3)
+        (G, D, _, evaluations), partition = crossover(p1, p2, p3)
         MLE_emittance = torch.mean(evaluations)
+        if not gen_best_score or MLE_emittance < gen_best_score:
+            gen_best_score = MLE_emittance
 
         children['cross%d' % w] = {
             'generator': G,
@@ -232,6 +242,7 @@ def breed(parents, population):
             'partition': partition
         }
         w += 1
+    print('The best emittance score for this generation is %2f' % gen_best_score)
     return children
 
 
@@ -258,7 +269,7 @@ def train_GPO_GAN(X, Y, num_batches, k, r):
         epoch += 1
 
     # Run a final training on the resultant child to ensure training on full dataset
-    student = select_k_fittest(population, 1)  # probably bug, need to isolate a single particle rather than a dict
+    student = select_k_fittest(population, 1)[0]  # probably bug, need to isolate a single particle rather than a dict
     return train(
         X,
         num_batches,
@@ -307,3 +318,4 @@ if __name__ == "__main__":
     num_batches = len(X)
 
     _, _, _, evaluations = train_GPO_GAN(X, Y, num_batches, args.k, args.r_epochs)
+    print('Final disciple has evaluation score of %d' % torch.mean(evaluations))
