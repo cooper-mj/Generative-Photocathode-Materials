@@ -23,7 +23,6 @@ from sklearn.neural_network import MLPClassifier
 # ==============================================================================
 def loss_function(G, D, fake_data, real_data):
 
-
     d_loss = -torch.mean(nn.functional.logsigmoid(D(real_data))) - torch.mean(torch.log(1 - torch.sigmoid(D(fake_data))))
     
     g_loss = -torch.mean(nn.functional.logsigmoid(D(fake_data)))
@@ -36,9 +35,6 @@ def batch_dataset(x, batch_size):
     partitions dataset x into args.batch_size batches
     TODO: ensure that x.shape[0] is divisible by batch_size so no leftovers
     """
-    size_modulo = len(x) % batch_size  # hack to ensure data is batches successfully
-    if size_modulo != 0:
-        x = x[:-size_modulo]
     partitioned = np.split(x, batch_size)
     return partitioned
 
@@ -120,7 +116,7 @@ def train_generator(D, G, g_optimizer, loss, real_data, fake_data):
     g_optimizer.step()
     return error
 
-def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=None, train_cols=None):
+def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=None):
     if set_args:
         args = set_args
     logger = Logger(model_name='GAN', data_name='Particles')
@@ -153,35 +149,29 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
 
             # Run logging to examine progress
             logger.log(total_d_error, g_error, epoch, n_batch, num_batches)
-            # if (n_batch % args.print_interval) == 0:
-            #     logger.display_status(
-            #         epoch,
-            #         args.num_epochs,
-            #         n_batch,
-            #         num_batches,
-            #         total_d_error,
-            #         g_error,
-            #         d_pred_real,
-            #         d_pred_fake
-            #     )
+            if (n_batch % args.print_interval) == 0:
+                logger.display_status(
+                    epoch,
+                    args.num_epochs,
+                    n_batch,
+                    num_batches,
+                    total_d_error,
+                    g_error,
+                    d_pred_real,
+                    d_pred_fake
+                )
     # Import the evaluator NN
-    file = open('NN_evaluator.sav', 'rb')
-    clf = pk.load(file)
-
+    clf = pk.load(open('NN_evaluator.sav', 'rb'))
     # Generate a test particle
     sample_particle = G(test_noise)
-    if train_cols:
-        d = torch.zeros(num_particle_samples, 71)
-        d[:,train_cols] = sample_particle
-        sample_particle = d
     # Evaluator predicts on that particle
     sample_particle = sample_particle.detach().numpy()
-    prediction = torch.tensor(clf.predict(sample_particle), dtype=torch.float32)
+    prediction = clf.predict(sample_particle)
     # Printout
-    # print("Generated Example Particles")
-    # print(sample_particle)
-    # print("Example Particle Predictions")
-    # print(prediction)
+    print("Generated Example Particles")
+    print(sample_particle)
+    print("Example Particle Predictions")
+    print(prediction)
     return G, D, sample_particle, prediction
 
 
@@ -218,6 +208,7 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     _, X, Y = load_dataset("../unit_cell_data_16.csv")
+    print(X.shape)
     X = batch_dataset(X, args.batch_size)
     num_batches = len(X)
 
