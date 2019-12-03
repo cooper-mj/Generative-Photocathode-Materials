@@ -111,7 +111,7 @@ def select_k_fittest(population, k):
     return population
 
 
-def reshape_generator_output(p1, p2, p3):
+def reshape_generator_output(pol1, pol2, pol3):
     """
     Reshapes the output of generators that do not match the original output size
     """
@@ -151,7 +151,7 @@ def reshape_generator_output(p1, p2, p3):
     jp_3[:,:,p_3[1]] = p_3[0]
 
     joint_partition = jp_1.add_(jp_2.add_(jp_3))
-    return joint_partition, d_1, d_2, d_3
+    return joint_partition, d_1, d_2, d_3, p_1, p_2, p_3
 
 
 def sample_top_paths(joint_partition, gen_partition):
@@ -162,12 +162,11 @@ def sample_top_paths(joint_partition, gen_partition):
         # for particle in ind:
         #     print(dataset_particles[ind,:])
     """
-    joint_partition = torch.cat((joint_partition, gen_partition), dim=0)
-
     file = open('NN_evaluator.sav', 'rb')
     clf = pk.load(file)
 
     dataset_particles = joint_partition.view(-1, 71)
+    dataset_particles = torch.cat((dataset_particles, gen_partition), dim=0)
     percentile_index = math.floor(dataset_particles.shape[0]/2)
 
     dataset_particles = dataset_particles.detach().numpy()
@@ -175,6 +174,8 @@ def sample_top_paths(joint_partition, gen_partition):
     res, ind = prediction.topk(percentile_index, largest=False)
 
     # There may be a bug later where this fails. That would be because i did batching jankily long ago, fix it
+    print(dataset_particles[ind,:].shape)
+    print(args.batch_size)
     top_partition = batch_dataset(dataset_particles[ind,:], args.batch_size)
     return torch.tensor(top_partition, dtype=torch.float32)
 
@@ -188,20 +189,47 @@ def crossover(pol1, pol2, pol3):
 
     We choose the crossover to operate on 3 GANs for the initial combination of the dataset
     """
-    joint_partition, d_1, d_2, d_3 = reshape_generator_output(pol1, pol2, pol3)
+    joint_partition, d_1, d_2, d_3, p_1, p_2, p_3 = reshape_generator_output(pol1, pol2, pol3)
     # ======================================================================== #
     # Construction Zone:
     #   We need to build an optimizer to optimize for low emittance value
     #   selecting from column values either from d_1, d_2 or d_3 for each
     #   column
     # ======================================================================== #
-    gen_partition = torch.zeros(10, 457, 71)
+    # Naive approach sequential greedy maximization
+    file = open('NN_evaluator.sav', 'rb')  # todo we load this twice not efficient
+    clf = pk.load(file)
+
+    gen_partition = torch.zeros(d_1.shape[0], 71, dtype=torch.float32)
+    for col in range(71):
+        grad_d_1 = gen_partition.clone()
+        grad_d_2 = gen_partition.clone()
+        grad_d_3 = gen_partition.clone()
+
+        grad_d_1[:,col] = d_1[:,col]
+        grad_d_2[:,col] = d_2[:,col]
+        grad_d_3[:,col] = d_3[:,col]
+
+        d_1_pred = torch.tensor(clf.predict((grad_d_1).detach().numpy()), dtype=torch.float32)
+        d_2_pred = torch.tensor(clf.predict((grad_d_2).detach().numpy()), dtype=torch.float32)
+        d_3_pred = torch.tensor(clf.predict((grad_d_3).detach().numpy()), dtype=torch.float32)
+
+        e_1 = torch.mean(d_1_pred)
+        e_2 = torch.mean(d_2_pred)
+        e_3 = torch.mean(d_3_pred)
+
+        if e_1 < e_2 and e_1 < e_3:
+            gen_partition = grad_d_1
+        elif e_2 < e_1 and e_2 < e_3:
+            gen_partition = grad_d_2
+        else:
+            gen_partition = grad_d_3
     # ======================================================================== #
-    # N =
-    if args.optim == 'Adam':
-        optimizer = optim.Adam(N.parameters(), lr=args.d_learning_rate)
-    else:
-        optimizer = optim.SGD(N.parameters(), lr=args.d_learning_rate)
+    # N = some neural network which chooses between d_1, d_2 and d_3 for each col
+    # if args.optim == 'Adam':
+    #     optimizer = optim.Adam(N.parameters(), lr=args.d_learning_rate)
+    # else:
+    #     optimizer = optim.SGD(N.parameters(), lr=args.d_learning_rate)
 
     # For each generated feature col, choose the col that maximizes according to NN_eval (stochastic gradient descent or adam)
         # After this, we already have a sub-GAN which is SGD optimized GAN combination
