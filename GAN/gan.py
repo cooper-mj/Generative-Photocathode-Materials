@@ -24,7 +24,7 @@ from tqdm import tqdm
 def nonsaturating_loss(G, D, fake_data, real_data):
 
     d_loss = -torch.mean(nn.functional.logsigmoid(D(real_data))) - torch.mean(torch.log(1 - torch.sigmoid(D(fake_data))))
-    
+
     g_loss = -torch.mean(nn.functional.logsigmoid(D(fake_data)))
     return d_loss, g_loss
 
@@ -83,7 +83,7 @@ def get_optimizers(args):
         g_optimizer = optim.SGD(G.parameters(), lr=args.g_learning_rate, momentum=args.sgd_momentum)
     return G, D, d_optimizer, g_optimizer
 
-def train_discriminator(G, D, d_optimizer, loss, real_data, fake_data):
+def train_discriminator(G, D, d_optimizer, loss, real_data, fake_data, loss_fn):
     """
     Trains the Discriminator for one step
     """
@@ -92,18 +92,18 @@ def train_discriminator(G, D, d_optimizer, loss, real_data, fake_data):
 
     # Train D on real data
     pred_real = D(real_data)
-    if args.loss_fn == "dflt":
+    if loss_fn == "dflt":
         error_real = loss(pred_real, Variable(torch.ones(N, 1)))
-    elif args.loss_fn == "nonsaturating":
+    elif loss_fn == "nonsaturating":
         error_real, _ = nonsaturating_loss(G, D, real_data, fake_data)
 
     error_real.backward()
 
     # Train on fake data
     pred_fake = D(fake_data)
-    if args.loss_fn == "dflt":
+    if loss_fn == "dflt":
         error_fake = loss(pred_fake, Variable(torch.ones(N, 1)))
-    elif args.loss_fn == "nonsaturating":
+    elif loss_fn == "nonsaturating":
         _, error_fake = nonsaturating_loss(G, D, real_data, fake_data)
 
     error_fake.backward()
@@ -111,7 +111,7 @@ def train_discriminator(G, D, d_optimizer, loss, real_data, fake_data):
     d_optimizer.step()
     return error_real + error_fake, pred_real, pred_fake
 
-def train_generator(G, D, g_optimizer, loss, real_data, fake_data):
+def train_generator(G, D, g_optimizer, loss, real_data, fake_data, loss_fn):
     """
     Trains the Generator for one step
     """
@@ -122,9 +122,9 @@ def train_generator(G, D, g_optimizer, loss, real_data, fake_data):
     # predict against fake data
     pred = D(fake_data)
 
-    if args.loss_fn == "dflt":
+    if loss_fn == "dflt":
         error = loss(pred, Variable(torch.ones(N, 1)))
-    elif args.loss_fn == "nonsaturating":
+    elif loss_fn == "nonsaturating":
         _, error = nonsaturating_loss(G, D, real_data, fake_data)
 
     error.backward()
@@ -154,13 +154,13 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
             d_noise = gen_noise(N, args.latent)  # generate a batch of noise vectors
             fake_data = G(d_noise).detach()
 
-            total_d_error, d_pred_real, d_pred_fake = train_discriminator(G, D, d_optimizer, loss, real_data, fake_data)
+            total_d_error, d_pred_real, d_pred_fake = train_discriminator(G, D, d_optimizer, loss, real_data, fake_data, args.loss_fn)
 
             # Train the generator 5 times for every 1 time we train the discriminator
             for d_step in range(5):
                 g_noise = gen_noise(N, args.latent)
                 fake_data = G(g_noise)
-                g_error = train_generator(G, D, g_optimizer, loss, real_data, fake_data)
+                g_error = train_generator(G, D, g_optimizer, loss, real_data, fake_data, args.loss_fn)
 
             # Run logging to examine progress
             logger.log(total_d_error, g_error, epoch, n_batch, num_batches)

@@ -154,7 +154,7 @@ def reshape_generator_output(pol1, pol2, pol3):
     return joint_partition, d_1, d_2, d_3, p_1, p_2, p_3
 
 
-def sample_top_paths(joint_partition, gen_partition):
+def sample_top_paths(joint_partition, gen_partition, clf):
     """
     Samples the top 50% of training samples from GPO and the previous dataset
 
@@ -162,9 +162,6 @@ def sample_top_paths(joint_partition, gen_partition):
         # for particle in ind:
         #     print(dataset_particles[ind,:])
     """
-    file = open('NN_evaluator.sav', 'rb')
-    clf = pk.load(file)
-
     dataset_particles = joint_partition.view(-1, 71)
     dataset_particles = torch.cat((dataset_particles, gen_partition), dim=0)
     percentile_index = math.floor(dataset_particles.shape[0]/2)
@@ -188,14 +185,9 @@ def crossover(pol1, pol2, pol3):
     We choose the crossover to operate on 3 GANs for the initial combination of the dataset
     """
     joint_partition, d_1, d_2, d_3, p_1, p_2, p_3 = reshape_generator_output(pol1, pol2, pol3)
-    # ======================================================================== #
-    # Construction Zone:
-    #   We need to build an optimizer to optimize for low emittance value
-    #   selecting from column values either from d_1, d_2 or d_3 for each
-    #   column
-    # ======================================================================== #
+
     # Naive approach sequential greedy maximization
-    file = open('NN_evaluator.sav', 'rb')  # todo we load this twice not efficient
+    file = open('NN_evaluator.sav', 'rb')
     clf = pk.load(file)
 
     gen_partition = torch.zeros(d_1.shape[0], 71, dtype=torch.float32)
@@ -223,24 +215,13 @@ def crossover(pol1, pol2, pol3):
         else:
             gen_partition = grad_d_3
     # ======================================================================== #
-    # N = some neural network which chooses between d_1, d_2 and d_3 for each col
-    # if args.optim == 'Adam':
-    #     optimizer = optim.Adam(N.parameters(), lr=args.d_learning_rate)
-    # else:
-    #     optimizer = optim.SGD(N.parameters(), lr=args.d_learning_rate)
-
     # For each generated feature col, choose the col that maximizes according to NN_eval (stochastic gradient descent or adam)
         # After this, we already have a sub-GAN which is SGD optimized GAN combination
         # This is what Michael was originally interested in investigating
         # The only problem is this is not a single GAN, so we cannot add it to a population and iterate
         # Print the results (i.e. mean emittance for the crossover) for sure!
     # ======================================================================== #
-    # Construction Zone:
-    #   We need to build an optimizer to optimize for low emittance value
-    #   selecting from column values either from d_1, d_2 or d_3 for each
-    #   column
-    # ======================================================================== #
-    top_partition = sample_top_paths(joint_partition, gen_partition)
+    top_partition = sample_top_paths(joint_partition, gen_partition, clf)
 
     # Now that we have a new dataset, train a new GAN on it for imitation learning GAN.
     spec_args = args
@@ -354,6 +335,8 @@ if __name__ == "__main__":
     parser.add_argument('--r_epochs', type=int, default=3, help="Number of epochs of GPO")
 
     parser.add_argument('--crossover_samples', type=int, default=1000, help="number of samples for crossover")
+
+    parser.add_argument('--loss_fn', type=str, default='dflt') # Loss defaults to whatever is defined in the train function - currently nn.BCELoss()
 
     args = parser.parse_args()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
