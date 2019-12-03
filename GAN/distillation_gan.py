@@ -174,8 +174,6 @@ def sample_top_paths(joint_partition, gen_partition):
     res, ind = prediction.topk(percentile_index, largest=False)
 
     # There may be a bug later where this fails. That would be because i did batching jankily long ago, fix it
-    print(dataset_particles[ind,:].shape)
-    print(args.batch_size)
     top_partition = batch_dataset(dataset_particles[ind,:], args.batch_size)
     return torch.tensor(top_partition, dtype=torch.float32)
 

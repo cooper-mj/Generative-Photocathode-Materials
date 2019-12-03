@@ -26,6 +26,9 @@ def batch_dataset(x, batch_size):
     partitions dataset x into args.batch_size batches
     TODO: ensure that x.shape[0] is divisible by batch_size so no leftovers
     """
+    size_modulo = len(x) % batch_size  # hack to ensure data is batches successfully
+    if size_modulo != 0:
+        x = x[:-size_modulo]
     partitioned = np.split(x, batch_size)
     return partitioned
 
