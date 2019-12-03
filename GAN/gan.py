@@ -89,12 +89,14 @@ def train_discriminator(D, G, d_optimizer, loss, real_data, fake_data):
     # Train D on real data
     pred_real = D(real_data)
     error_real, _ = loss_function(G, D, real_data, fake_data)
+    # error_real = loss(pred_real, Variable(torch.ones(N, 1)))
 
     error_real.backward()
 
     # Train on fake data
     pred_fake = D(fake_data)
     _, error_fake = loss_function(G, D, real_data, fake_data)
+    # error_fake = loss(pred_fake, Variable(torch.ones(N, 1)))
     error_fake.backward()
 
     d_optimizer.step()
@@ -112,7 +114,6 @@ def train_generator(D, G, g_optimizer, loss, real_data, fake_data):
 
     _, error = loss_function(G, D, real_data, fake_data)
     # error = loss(pred, Variable(torch.ones(N, 1)))
-    # error.backward()
     g_optimizer.step()
     return error
 
