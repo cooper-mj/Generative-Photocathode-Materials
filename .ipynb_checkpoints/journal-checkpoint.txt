@@ -1,0 +1,29 @@
+This can be our project journal!
+
+
+----- Date: 11/11/2019
+Michael, Makena: onboarding.
+The file load_dataset.py contains the code for extracting and loading the
+dataset into the models. The file logistic_regression.py contains an example
+of loading the unit cell dataset into train, validation, and test sets, and running
+a simple model on the loaded datasets.
+
+The datasets which can be loaded into the project are:
+- unit_cell_data.csv - unit cell representation.
+- unit_cell_data_16.csv - expanded unit cell representation.
+- material_average_data.csv - average properties representation.
+- material_average_data_plus.csv - expanded average properties representation.
+
+Early investigating of PyGAN library:
+https://pypi.org/project/pygan/
+
+Makena: google cloud setup
+Created our project on the Google Cloud Platform and sent invites to Jason and Michael.
+We are awaiting a quota increase, so I will notify everyone when all resources are 
+set up.
+
+----- Date: 11/16/2019
+Michael: updated dataloader to return two values: X, Y.
+X - unit cell representations for all molecules with Y[i] < 0.5.
+Y - corresponding y values. 
+In this way, we've got a pre-filtered dataset to train the model on.
