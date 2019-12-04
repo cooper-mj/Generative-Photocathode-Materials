@@ -19,7 +19,6 @@ from sklearn.neural_network import MLPClassifier
 from tqdm import tqdm
 
 NUM_EVALUATORS = 10
-NUM_PARTICLES = 100
 
 # ==============================================================================
 # Nonsaturating Loss Function
@@ -178,18 +177,21 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
             #         d_pred_real,
             #         d_pred_fake
             #     )
+    test(G, num_particle_samples, 100)
+    return G, D
 
-
+def test(G, num_particle_samples, num_particles=1000):
     # Generate NUM_PARTICLES test particles
     particles_emittances = []
-    for i in range(NUM_PARTICLES):
+    print("Testing particles...")
+    for i in tqdm(range(num_particles)):
         particle_noise = gen_noise(num_particle_samples, args.latent)
         # Generate a test particle
         sample_particle = G(particle_noise)
-        if train_cols:
-            d = torch.zeros(num_particle_samples, 71)
-            d[:,train_cols] = sample_particle
-            sample_particle = d
+        # if train_cols:
+        #     d = torch.zeros(num_particle_samples, 71)
+        #     d[:,train_cols] = sample_particle
+        #     sample_particle = d
         # Evaluator predicts on that particle
         sample_particle = sample_particle.detach().numpy()
 
@@ -210,7 +212,6 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
     print("Standard Deviation of Emittance of Generated Particles Sample")
     print(torch.std(torch.stack(particles_emittances)).item())
 
-    return G, D, sample_particle, prediction
 
 
 def local_parser():
