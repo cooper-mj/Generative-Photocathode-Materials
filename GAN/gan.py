@@ -31,6 +31,36 @@ def nonsaturating_loss(G, D, fake_data, real_data):
     return d_loss, g_loss
 
 # ==============================================================================
+# Wasserstein Loss Function
+# ==============================================================================
+def loss_wasserstein_gp(G, D, fake_data, real_data):
+    '''
+    Returns:
+    - d_loss (torch.Tensor): wasserstein discriminator loss
+    - g_loss (torch.Tensor): wasserstein generator loss
+    '''
+
+    batch_size = real_data.shape[0]
+    lam = 10
+
+    alpha = torch.rand(batch_size, requires_grad = True)
+    alpha = torch.unsqueeze(alpha, 1)
+
+    x_1 = fake_data
+    x_2 = real_data
+    x = alpha*x_1 + (torch.ones_like(alpha) - alpha)*x_2
+
+    d_x = D(x)
+    grad_d = torch.autograd.grad(d_x, x, grad_outputs= torch.ones_like(d_x), create_graph=True)[0]
+    d_loss_third_term = lam*torch.mean((grad_d.norm(2) - torch.ones_like(grad_d))**2)
+    d_g_z = D(fake_data)
+    d_loss = torch.mean(d_g_z) - torch.mean(D(real_data)) + d_loss_third_term
+    g_loss = -torch.mean(d_g_z)
+
+    return d_loss, g_loss
+
+
+# ==============================================================================
 # Data sampler for Particles
 # ==============================================================================
 def batch_dataset(x, batch_size):
@@ -51,6 +81,56 @@ def gen_noise(sample_size, latent):
     """
     return Variable(torch.randn(sample_size, latent))
 
+# ==============================================================================
+# KNN functions
+# ==============================================================================
+# Function: knn
+# -------------
+# finds the k nearest neighbors in the dataset closest to the sample_particle
+def knn(sample_particle, dataset, k):
+    min_norm = float("inf")
+    min_dict = {}
+    for i in range(len(dataset)):
+        x_real = dataset[i,:]
+        l2_norm = torch.dist(sample_particle, x_real)
+        min_dict[l2_norm] = x_real
+
+    min_dists = sorted(min_dict.keys())[:k]
+    k_nearest = torch.zeros_like(min_dict[min_dists[1]]) # if you think of a better way to init might do that instead
+    inds = []
+    for dist in min_dists:
+        k_nearest = torch.cat((k_nearest, min_dict[dist]), dim = 0) # something is wrong with the concat
+        ind = torch.nonzero((dataset == min_dict[dist]).sum(dim=1) == dataset.size(1))
+        inds.append(ind)
+    k_nearest = k_nearest[71:]
+    k_nearest = k_nearest.view(-1, 71)
+    return k_nearest, inds
+
+def knn_all_sample_particles(sample_particles, X_knn, Y_knn, k):
+    #  functionalize : the function takes in the whole dataset, k,
+    #  and the sample particle to find the k nearest neighbors. It returns
+    #  the k nearest neighbors in the real dataset, as well as the emmitances
+    #  of those neighbors.
+    # includes all of the dataset into X and Y
+    #_, X_knn, Y_knn = load_dataset("/Users/MakenaLow/Downloads/CS236_Final_Project/Generative-Photocathode-Materials/unit_cell_data_16.csv", threshold=float("inf"))
+    X_knn = torch.from_numpy(X_knn).type(torch.FloatTensor)
+    knn_for_sample_particles = []
+    inds_knn = []
+
+    for one_sample_particle in sample_particles[1:3]:
+        knn_for_sample_particle, inds = (knn(one_sample_particle, X_knn, k))
+        knn_for_sample_particles.append(knn_for_sample_particle) # return value
+        inds_knn.append(inds)
+
+    lowest_emittance_neighbors = []
+    lowest_emittance_of_neighbors = []
+    for inds_knn_sample_particle in inds_knn:
+        lowest_emittances = Y_knn[inds_knn_sample_particle] # can edit to take the min if wanted
+        lowest_emittance, lowest_emittance_ind = np.amin(lowest_emittances), np.argmin(lowest_emittances)
+        lowest_emittance_of_neighbors.append(lowest_emittance) # return value
+        lowest_emittance_neighbors.append(torch.squeeze(X_knn[inds_knn_sample_particle[lowest_emittance_ind]]))
+
+    return lowest_emittance_neighbors, lowest_emittance_of_neighbors
 # ==============================================================================
 # Train loop
 # ==============================================================================
@@ -98,6 +178,8 @@ def train_discriminator(G, D, d_optimizer, loss, real_data, fake_data, loss_fn):
         error_real = loss(pred_real, Variable(torch.ones(N, 1)))
     elif loss_fn == "nonsaturating":
         error_real, _ = nonsaturating_loss(G, D, real_data, fake_data)
+    elif loss_fn == "wasserstein_gp":
+        error_real, _ = loss_wasserstein_gp(G, D, real_data, fake_data)
 
     error_real.backward()
 
@@ -107,6 +189,9 @@ def train_discriminator(G, D, d_optimizer, loss, real_data, fake_data, loss_fn):
         error_fake = loss(pred_fake, Variable(torch.ones(N, 1)))
     elif loss_fn == "nonsaturating":
         _, error_fake = nonsaturating_loss(G, D, real_data, fake_data)
+    elif loss_fn == "wasserstein_gp":
+        _, error_fake = loss_wasserstein_gp(G, D, real_data, fake_data)
+
 
     error_fake.backward()
 
@@ -128,6 +213,8 @@ def train_generator(G, D, g_optimizer, loss, real_data, fake_data, loss_fn):
         error = loss(pred, Variable(torch.ones(N, 1)))
     elif loss_fn == "nonsaturating":
         _, error = nonsaturating_loss(G, D, real_data, fake_data)
+    elif loss_fn == "wasserstein_gp":
+        _, error = loss_wasserstein_gp(G, D, real_data, fake_data)
 
     error.backward()
     g_optimizer.step()
@@ -228,6 +315,11 @@ def evaluate_generated_particles(G, num_particle_samples, latent):
         # Using the evaluator NN, make a prediction on the generated particle
         predictions[:,i] = torch.tensor(clf.predict(sample_particle), dtype=torch.float32)
     prediction = torch.mean(predictions)
+
+    # KNN analysis
+    _, X_knn, Y_knn = load_dataset("../unit_cell_data_16.csv", threshold=float("inf"))
+    lowest_emittance_neighbors, lowest_emittance_of_neighbors = knn_all_sample_particles(sample_particle, X_knn, Y_knn, 10)
+
     print("Particles:")
     print(sample_particle)
     print("Emittances of Generated Particles:")
@@ -236,9 +328,11 @@ def evaluate_generated_particles(G, num_particle_samples, latent):
     print(torch.mean(predictions))
     print("Standard Deviation of Emittance of Generated Particles Sample")
     print(torch.std(predictions))
+    print("Generated Parcticles Nearest Neighbors with Lowest Emmittance")
+    print(lowest_emittance_neighbors)
+    print("Emmittances of Nearest Neighbrors")
+    print(lowest_emittance_of_neighbors)
     torch.set_printoptions(profile="default")
-
-
 
 
 def local_parser():
