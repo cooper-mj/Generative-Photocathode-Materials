@@ -175,9 +175,6 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
             #         d_pred_real,
             #         d_pred_fake
             #     )
-    # Import the evaluator NN
-    file = open('NN_evaluator.sav', 'rb')
-    clf = pk.load(file)
 
     # Generate a test particle
     sample_particle = G(test_noise)
@@ -187,7 +184,15 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
         sample_particle = d
     # Evaluator predicts on that particle
     sample_particle = sample_particle.detach().numpy()
-    prediction = torch.tensor(clf.predict(sample_particle), dtype=torch.float32)
+
+    predictions = []
+    for i in range(10):
+        # Test on each NN evaluator
+        # Import the evaluator NN
+        file = open('NN_evaluator_'+str(i)+'.sav', 'rb')
+        clf = pk.load(file)
+        predictions.append(torch.tensor(clf.predict(sample_particle), dtype=torch.float32))
+    prediction = torch.mean(torch.stack(predictions))
     # Printout
     print("Generated Example Particles")
     print(sample_particle)
