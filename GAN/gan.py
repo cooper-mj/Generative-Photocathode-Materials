@@ -18,6 +18,9 @@ from torchvision import transforms, datasets
 from sklearn.neural_network import MLPClassifier
 from tqdm import tqdm
 
+NUM_EVALUATORS = 10
+NUM_PARTICLES = 100
+
 # ==============================================================================
 # Nonsaturating Loss Function
 # ==============================================================================
@@ -176,31 +179,37 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
             #         d_pred_fake
             #     )
 
-    # Generate a test particle
-    sample_particle = G(test_noise)
-    if train_cols:
-        d = torch.zeros(num_particle_samples, 71)
-        d[:,train_cols] = sample_particle
-        sample_particle = d
-    # Evaluator predicts on that particle
-    sample_particle = sample_particle.detach().numpy()
+
+    # Generate NUM_PARTICLES test particles
+    particles_emittances = []
+    for i in range(NUM_PARTICLES):
+        particle_noise = gen_noise(num_particle_samples, args.latent)
+        # Generate a test particle
+        sample_particle = G(particle_noise)
+        if train_cols:
+            d = torch.zeros(num_particle_samples, 71)
+            d[:,train_cols] = sample_particle
+            sample_particle = d
+        # Evaluator predicts on that particle
+        sample_particle = sample_particle.detach().numpy()
 
 
-    # Test the generated particle on all ten NN evaluators; then
-    # take the average emittance prediction from the NN evaluators.
-    predictions = []
-    for i in range(10):
-        # Import the evaluator NN
-        file = open('NN_evaluator_'+str(i)+'.sav', 'rb')
-        clf = pk.load(file)
-        # Using the evaluator NN, make a prediction on the generated particle
-        predictions.append(torch.tensor(clf.predict(sample_particle), dtype=torch.float32))
-    prediction = torch.mean(torch.stack(predictions))
-    # Printout
-    print("Generated Example Particles")
-    print(sample_particle)
-    print("Example Particle Predictions")
-    print(prediction)
+        # Test the generated particle on all ten NN evaluators; then
+        # take the average emittance prediction from the NN evaluators.
+        predictions = []
+        for i in range(NUM_EVALUATORS):
+            # Import the evaluator NN
+            file = open('NN_evaluator_'+str(i)+'.sav', 'rb')
+            clf = pk.load(file)
+            # Using the evaluator NN, make a prediction on the generated particle
+            predictions.append(torch.tensor(clf.predict(sample_particle), dtype=torch.float32))
+        prediction = torch.mean(torch.stack(predictions))
+        particles_emittances.append(prediction)
+    print("Mean Emittance of Generated Particles Sample")
+    print(torch.mean(torch.stack(particles_emittances)).item())
+    print("Standard Deviation of Emittance of Generated Particles Sample")
+    print(torch.std(torch.stack(particles_emittances)).item())
+
     return G, D, sample_particle, prediction
 
 
