@@ -185,12 +185,15 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
     # Evaluator predicts on that particle
     sample_particle = sample_particle.detach().numpy()
 
+
+    # Test the generated particle on all ten NN evaluators; then
+    # take the average emittance prediction from the NN evaluators.
     predictions = []
     for i in range(10):
-        # Test on each NN evaluator
         # Import the evaluator NN
         file = open('NN_evaluator_'+str(i)+'.sav', 'rb')
         clf = pk.load(file)
+        # Using the evaluator NN, make a prediction on the generated particle
         predictions.append(torch.tensor(clf.predict(sample_particle), dtype=torch.float32))
     prediction = torch.mean(torch.stack(predictions))
     # Printout
