@@ -133,7 +133,7 @@ def train_generator(G, D, g_optimizer, loss, real_data, fake_data, loss_fn):
     g_optimizer.step()
     return error
 
-def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=None, train_cols=None):
+def train(X, num_batches, G=None, D=None, set_args=None, train_cols=None):
     if set_args:
         args = set_args
     logger = Logger(model_name='GAN', data_name='Particles')
@@ -143,8 +143,8 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
     else:
         _, _, d_optimizer, g_optimizer = get_optimizers(args)
 
-    # Sample particles to examine progress
-    test_noise = gen_noise(num_particle_samples, args.latent)
+    # # Sample particles to examine progress
+    # test_noise = gen_noise(num_particle_samples, args.latent)
 
     for epoch in tqdm(range(args.num_epochs)):
         for n_batch, real_particle_batch in enumerate(X):
@@ -177,15 +177,16 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
             #         d_pred_real,
             #         d_pred_fake
             #     )
-    test(G, num_particle_samples)
+    evaluate_generated_particles(G)
     return G, D
 
-def test(G, num_particle_samples, num_particles=1000):
+def evaluate_generated_particles(G, num_particles=1000):
     # Generate NUM_PARTICLES test particles
     particles_emittances = []
     print("Testing particles...")
+    print("Particles:")
     for i in tqdm(range(num_particles)):
-        particle_noise = gen_noise(num_particle_samples, args.latent)
+        particle_noise = gen_noise(1, args.latent)
         # Generate a test particle
         sample_particle = G(particle_noise)
         # if train_cols:
@@ -193,8 +194,10 @@ def test(G, num_particle_samples, num_particles=1000):
         #     d[:,train_cols] = sample_particle
         #     sample_particle = d
         # Evaluator predicts on that particle
-        sample_particle = sample_particle.detach().numpy()
-
+        sample_particle = sample_particle.detach()
+        torch.set_printoptions(profile="full")
+        print(sample_particle)
+        torch.set_printoptions(profile="default")
 
         # Test the generated particle on all ten NN evaluators; then
         # take the average emittance prediction from the NN evaluators.
@@ -207,6 +210,8 @@ def test(G, num_particle_samples, num_particles=1000):
             predictions.append(torch.tensor(clf.predict(sample_particle), dtype=torch.float32))
         prediction = torch.mean(torch.stack(predictions))
         particles_emittances.append(prediction)
+    print("Emittances of Generated Particles:")
+    print(particles_emittances)
     print("Mean Emittance of Generated Particles Sample")
     print(torch.mean(torch.stack(particles_emittances)).item())
     print("Standard Deviation of Emittance of Generated Particles Sample")
