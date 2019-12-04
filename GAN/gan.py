@@ -177,7 +177,7 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
             #         d_pred_real,
             #         d_pred_fake
             #     )
-    test(G, num_particle_samples, 100)
+    test(G, num_particle_samples)
     return G, D
 
 def test(G, num_particle_samples, num_particles=1000):
