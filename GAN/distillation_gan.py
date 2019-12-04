@@ -187,7 +187,7 @@ def crossover(pol1, pol2, pol3):
     joint_partition, d_1, d_2, d_3, p_1, p_2, p_3 = reshape_generator_output(pol1, pol2, pol3)
 
     # Naive approach sequential greedy maximization
-    file = open('NN_evaluator.sav', 'rb')
+    file = open('NN_evaluator_0.sav', 'rb')
     clf = pk.load(file)
 
     gen_partition = torch.zeros(d_1.shape[0], 71, dtype=torch.float32)
