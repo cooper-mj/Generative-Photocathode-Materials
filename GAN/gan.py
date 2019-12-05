@@ -11,6 +11,7 @@ from discriminator import Discriminator
 from generator import Generator
 from utils import load_dataset
 from logger_utils import Logger
+from emittance_logger_utils import Logger as ELogger
 from matplotlib import pyplot as plt
 from torch.autograd import Variable
 from torchvision import transforms, datasets
@@ -224,6 +225,7 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
     if set_args:
         args = set_args
     loss_logger = Logger(model_name=model_name, data_name='loss')
+    emit_logger = ELogger(model_name=model_name, data_name='emittance')
 
     loss = nn.BCELoss()  # Utilizing Binary Cross Entropy Loss
     if not G and not D:
@@ -273,8 +275,13 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
         elif not train_cols and epoch == args.num_epochs-1:
             predictions = evaluate_generated_particles(G, num_particle_samples, args.latent)
         prediction = torch.mean(predictions)
+        emittance_std = torch.std(predictions)
+
+        emit_logger.log(epoch, prediction, emittance_std)
+
 
     loss_logger.close()
+    emit_logger.close()
     return G, D, sample_particle, prediction
 
 
