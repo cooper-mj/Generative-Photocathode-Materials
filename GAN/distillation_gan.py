@@ -303,7 +303,8 @@ def train_GPO_GAN(X, Y, num_batches, k, r):
         args.num_particle_samples,
         student['generator'],
         student['discriminator'],
-        set_args=args
+        set_args=args,
+        model_name='GPO-GAN'
     )
 
 

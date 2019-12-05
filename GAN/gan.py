@@ -220,10 +220,11 @@ def train_generator(G, D, g_optimizer, loss, real_data, fake_data, loss_fn):
     g_optimizer.step()
     return error
 
-def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=None, train_cols=None):
+def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=None, train_cols=None, model_name='gpo-children'):
     if set_args:
         args = set_args
-    logger = Logger(model_name='GAN', data_name='Particles')
+    loss_logger = Logger(model_name=model_name, data_name='loss')
+
     loss = nn.BCELoss()  # Utilizing Binary Cross Entropy Loss
     if not G and not D:
         G, D, d_optimizer, g_optimizer = get_optimizers(args)
@@ -252,18 +253,7 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
                 g_error = train_generator(G, D, g_optimizer, loss, real_data, fake_data, args.loss_fn)
 
             # Run logging to examine progress
-            logger.log(total_d_error, g_error, epoch, n_batch, num_batches)
-            # if (n_batch % args.print_interval) == 0:
-            #     logger.display_status(
-            #         epoch,
-            #         args.num_epochs,
-            #         n_batch,
-            #         num_batches,
-            #         total_d_error,
-            #         g_error,
-            #         d_pred_real,
-            #         d_pred_fake
-            #     )
+            loss_logger.log(total_d_error, g_error, epoch, n_batch, num_batches)
 
         predictions = torch.zeros(num_particle_samples, 10)
         sample_particle = G(test_noise)
@@ -284,6 +274,7 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
             predictions = evaluate_generated_particles(G, num_particle_samples, args.latent)
         prediction = torch.mean(predictions)
 
+    loss_logger.close()
     return G, D, sample_particle, prediction
 
 
@@ -370,4 +361,4 @@ if __name__ == "__main__":
     X = batch_dataset(X, args.batch_size)
     num_batches = len(X)
 
-    train(X, num_batches, set_args=args)
+    train(X, num_batches, set_args=args, model_name=args.loss_fn)
