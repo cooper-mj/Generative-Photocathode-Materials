@@ -257,27 +257,29 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
             # Run logging to examine progress
             loss_logger.log(total_d_error, g_error, epoch, n_batch, num_batches)
 
-        predictions = torch.zeros(num_particle_samples, 10)
+        partial_eval_count = int(NUM_EVALUATORS)
+        predictions = torch.zeros(num_particle_samples, partial_eval_count)
         sample_particle = G(test_noise)
 
         if train_cols:
             d = torch.zeros(num_particle_samples, 71)
             d[:,train_cols] = sample_particle
             sample_particle = d
-            sample_particle = sample_particle.detach()
+        sample_particle = sample_particle.detach()
 
-            for i in range(int(NUM_EVALUATORS/2)):
-                # Import the evaluator NN
-                file = open('NN_evaluator_'+str(i)+'.sav', 'rb')
-                clf = pk.load(file)
-                # Using the evaluator NN, make a prediction on the generated particle
-                predictions[:,i] = torch.tensor(clf.predict(sample_particle), dtype=torch.float32)
-        elif not train_cols and epoch == args.num_epochs-1:
+        for i in range(partial_eval_count):
+            # Import the evaluator NN
+            file = open('NN_evaluator_'+str(i)+'.sav', 'rb')
+            clf = pk.load(file)
+            # Using the evaluator NN, make a prediction on the generated particle
+            predictions[:,i] = torch.tensor(clf.predict(sample_particle), dtype=torch.float32)
+        if not train_cols and epoch == args.num_epochs-1:
             predictions = evaluate_generated_particles(G, num_particle_samples, args.latent)
         prediction = torch.mean(predictions)
         emittance_std = torch.std(predictions)
 
         emit_logger.log(epoch, prediction, emittance_std)
+        # print(prediction, emittance_std)
 
 
     loss_logger.close()
