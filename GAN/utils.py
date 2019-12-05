@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler
 		Set threshold = -1 for non-binary models
 	@return tuple of numpy arrays for MPIDs, features, and labels
 '''
-def load_dataset(filename):#, threshold=0.2):
+def load_dataset(filename, threshold=0.2):
 	# Get data
 	Y_full = pd.read_csv('../emittance_labels.csv')
 	X_full = None
@@ -46,7 +46,7 @@ def load_dataset(filename):#, threshold=0.2):
 	# 	mean = np.mean(adj_col * mask)
 	# 	adj_col[adj_col == nonexistent] = mean
 
-	filtered_total = np.array([total[i] for i in range(len(total)) if total[i, -1] < 0.5]) #0.5 is threshold value here
+	filtered_total = np.array([total[i] for i in range(len(total)) if total[i, -1] < threshold]) #0.5 is threshold value here
 	X = filtered_total[:,1:-1]
 	Y = np.array(filtered_total[:, -1])
 

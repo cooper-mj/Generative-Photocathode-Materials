@@ -11,7 +11,7 @@ import torch.optim as optim
 import pickle as pk
 
 from discriminator import Discriminator
-from gan import load_dataset, batch_dataset, train, gen_noise
+from gan import batch_dataset, train, gen_noise
 from generator import Generator
 from utils import load_dataset
 from logger_utils import Logger
@@ -296,6 +296,7 @@ def train_GPO_GAN(X, Y, num_batches, k, r):
 
     # Run a final training on the resultant child to ensure training on full dataset
     student = select_k_fittest(population, 1)[0]  # probably bug, need to isolate a single particle rather than a dict
+    # return student['generator'], student['discriminator'], None, student['emittance']
     return train(
         X,
         num_batches,
@@ -341,7 +342,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    _, X, Y = load_dataset("../unit_cell_data_16.csv")
+    _, X, Y = load_dataset("../unit_cell_data_16.csv", 0.2)
     X = batch_dataset(X, args.batch_size)
     num_batches = len(X)
 

@@ -265,28 +265,25 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
             #         d_pred_fake
             #     )
 
-            # Import the evaluator NN
+        predictions = torch.zeros(num_particle_samples, 10)
+        sample_particle = G(test_noise)
 
-    file = open('NN_evaluator_0.sav', 'rb')
+        if train_cols:
+            d = torch.zeros(num_particle_samples, 71)
+            d[:,train_cols] = sample_particle
+            sample_particle = d
+            sample_particle = sample_particle.detach()
 
-    clf = pk.load(file)
+            for i in range(int(NUM_EVALUATORS/2)):
+                # Import the evaluator NN
+                file = open('NN_evaluator_'+str(i)+'.sav', 'rb')
+                clf = pk.load(file)
+                # Using the evaluator NN, make a prediction on the generated particle
+                predictions[:,i] = torch.tensor(clf.predict(sample_particle), dtype=torch.float32)
+        elif not train_cols and epoch == args.num_epochs-1:
+            predictions = evaluate_generated_particles(G, num_particle_samples, args.latent)
+        prediction = torch.mean(predictions)
 
-    # Generate a test particle
-    sample_particle = G(test_noise)
-    if train_cols:
-        d = torch.zeros(num_particle_samples, 71)
-        d[:,train_cols] = sample_particle
-        sample_particle = d
-    else:
-        evaluate_generated_particles(G, num_particle_samples, args.latent)
-    # Evaluator predicts on that particle
-    sample_particle = sample_particle.detach().numpy()
-    prediction = torch.tensor(clf.predict(sample_particle), dtype=torch.float32)
-    # Printout
-    # print("Generated Example Particles")
-    # print(sample_particle)
-    # print("Example Particle Predictions")
-    # print(prediction)
     return G, D, sample_particle, prediction
 
 
@@ -314,7 +311,6 @@ def evaluate_generated_particles(G, num_particle_samples, latent):
         clf = pk.load(file)
         # Using the evaluator NN, make a prediction on the generated particle
         predictions[:,i] = torch.tensor(clf.predict(sample_particle), dtype=torch.float32)
-    prediction = torch.mean(predictions)
 
     # KNN analysis
     _, X_knn, Y_knn = load_dataset("../unit_cell_data_16.csv", threshold=float("inf"))
@@ -333,6 +329,7 @@ def evaluate_generated_particles(G, num_particle_samples, latent):
     print("Emmittances of Nearest Neighbrors")
     print(lowest_emittance_of_neighbors)
     torch.set_printoptions(profile="default")
+    return predictions
 
 
 def local_parser():
@@ -369,7 +366,7 @@ if __name__ == "__main__":
     args = local_parser()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    _, X, Y = load_dataset("../unit_cell_data_16.csv")
+    _, X, Y = load_dataset("../unit_cell_data_16.csv", 0.2)
     X = batch_dataset(X, args.batch_size)
     num_batches = len(X)
 
