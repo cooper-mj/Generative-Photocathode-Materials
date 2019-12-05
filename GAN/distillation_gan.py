@@ -19,6 +19,7 @@ from matplotlib import pyplot as plt
 from torch.autograd import Variable
 from torchvision import transforms, datasets
 
+NUM_EVALUATORS = 10
 
 # ==============================================================================
 # Distillation GAN
@@ -187,8 +188,8 @@ def crossover(pol1, pol2, pol3):
     joint_partition, d_1, d_2, d_3, p_1, p_2, p_3 = reshape_generator_output(pol1, pol2, pol3)
 
     # Naive approach sequential greedy maximization
-    file = open('NN_evaluator_0.sav', 'rb')
-    clf = pk.load(file)
+    # file = open('NN_evaluator_0.sav', 'rb')
+    # clf = pk.load(file)
 
     gen_partition = torch.zeros(d_1.shape[0], 71, dtype=torch.float32)
     for col in range(71):
@@ -200,9 +201,18 @@ def crossover(pol1, pol2, pol3):
         grad_d_2[:,col] = d_2[:,col]
         grad_d_3[:,col] = d_3[:,col]
 
-        d_1_pred = torch.tensor(clf.predict((grad_d_1).detach().numpy()), dtype=torch.float32)
-        d_2_pred = torch.tensor(clf.predict((grad_d_2).detach().numpy()), dtype=torch.float32)
-        d_3_pred = torch.tensor(clf.predict((grad_d_3).detach().numpy()), dtype=torch.float32)
+        d_1_pred = torch.zeros(d_1.shape[0], NUM_EVALUATORS)
+        d_2_pred = torch.zeros(d_1.shape[0], NUM_EVALUATORS)
+        d_3_pred = torch.zeros(d_1.shape[0], NUM_EVALUATORS)
+
+        for i in range(NUM_EVALUATORS):
+            # Import the evaluator NN
+            file = open('NN_evaluator_'+str(i)+'.sav', 'rb')
+            clf = pk.load(file)
+            # Using the evaluator NN, make a prediction on the generated particle
+            d_1_pred[:,i] = torch.tensor(clf.predict((grad_d_1).detach().numpy()), dtype=torch.float32)
+            d_2_pred[:,i] = torch.tensor(clf.predict((grad_d_2).detach().numpy()), dtype=torch.float32)
+            d_3_pred[:,i] = torch.tensor(clf.predict((grad_d_3).detach().numpy()), dtype=torch.float32)
 
         e_1 = torch.mean(d_1_pred)
         e_2 = torch.mean(d_2_pred)

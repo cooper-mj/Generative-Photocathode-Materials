@@ -273,8 +273,8 @@ def train(X, num_batches, num_particle_samples=100, G=None, D=None, set_args=Non
             clf = pk.load(file)
             # Using the evaluator NN, make a prediction on the generated particle
             predictions[:,i] = torch.tensor(clf.predict(sample_particle), dtype=torch.float32)
-        if not train_cols and epoch == args.num_epochs-1:
-            predictions = evaluate_generated_particles(G, num_particle_samples, args.latent)
+        if not train_cols and epoch == args.num_epochs-1:  # we do not want to log these since different noise sample
+            evaluate_generated_particles(G, num_particle_samples, args.latent)
         prediction = torch.mean(predictions)
         emittance_std = torch.std(predictions)
 
@@ -329,7 +329,6 @@ def evaluate_generated_particles(G, num_particle_samples, latent):
     print("Emmittances of Nearest Neighbrors")
     print(lowest_emittance_of_neighbors)
     torch.set_printoptions(profile="default")
-    return predictions
 
 
 def local_parser():
