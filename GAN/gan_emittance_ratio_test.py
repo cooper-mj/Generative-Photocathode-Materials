@@ -10,8 +10,8 @@ import pickle as pk
 from discriminator import Discriminator
 from generator import Generator
 from utils import load_dataset
-from logger_utils import Logger
-from emittance_logger_utils import Logger as ELogger
+# from logger_utils import Logger
+# from emittance_logger_utils import Logger as ELogger
 from matplotlib import pyplot as plt
 from torch.autograd import Variable
 from torchvision import transforms, datasets
@@ -256,8 +256,8 @@ def train_generator(G, D, g_optimizer, loss, real_data, fake_data, loss_fn):
 def train(X, num_batches, training_ratio = (1, 5), num_particle_samples=1000, G=None, D=None, set_args=None, train_cols=None, model_name='gpo-children'):
 	if set_args:
 		args = set_args
-	loss_logger = Logger(model_name=model_name, data_name='loss')
-	emit_logger = ELogger(model_name=model_name, data_name='emittance')
+	# loss_logger = Logger(model_name=model_name, data_name='loss')
+	# emit_logger = ELogger(model_name=model_name, data_name='emittance')
 
 	loss = nn.BCELoss()  # Utilizing Binary Cross Entropy Loss
 	if not G and not D:
@@ -292,7 +292,7 @@ def train(X, num_batches, training_ratio = (1, 5), num_particle_samples=1000, G=
 				g_error = train_generator(G, D, g_optimizer, loss, real_data, fake_data, args.loss_fn)
 
 			# Run logging to examine progress
-			loss_logger.log(total_d_error, g_error, epoch, n_batch, num_batches)
+			# loss_logger.log(total_d_error, g_error, epoch, n_batch, num_batches)
 
 		partial_eval_count = int(NUM_EVALUATORS)
 		predictions = torch.zeros(num_particle_samples, partial_eval_count)
@@ -315,12 +315,12 @@ def train(X, num_batches, training_ratio = (1, 5), num_particle_samples=1000, G=
 		prediction = torch.mean(predictions)
 		emittance_std = torch.std(predictions)
 
-		emit_logger.log(epoch, prediction, emittance_std)
+		# emit_logger.log(epoch, prediction, emittance_std)
 		# print(prediction, emittance_std)
 
 
-	loss_logger.close()
-	emit_logger.close()
+	# loss_logger.close()
+	# emit_logger.close()
 	# return G, D, sample_particle, prediction
 	return mean_predicted_emittance
 
