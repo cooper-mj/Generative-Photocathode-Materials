@@ -11,6 +11,8 @@ if __name__ == "__main__":
 
 	X_train, Y_train, MPIDs_train, X_valid, Y_valid, MPIDs_valid, X_test, Y_test, MPIDs_test = split_data(load_dataset("unit_cell_data.csv", 0.2))
 
+	print(len(Y_train) + len(Y_test) + len(Y_valid))
+
 	print("Training set information:")
 	print("Positive examples: " + str(sum(Y_train)))
 	print("Negative examples: " + str(len(Y_train) - sum(Y_train)))
