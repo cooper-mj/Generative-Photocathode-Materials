@@ -268,7 +268,7 @@ def train(X, num_batches, training_ratio = (1, 5), num_particle_samples=1000, G=
 	# Sample particles to examine progress
 	test_noise = gen_noise(num_particle_samples, args.latent)
 
-	for epoch in range(args.num_epochs):
+	for epoch in tqdm(range(args.num_epochs)):
 		for n_batch, real_particle_batch in enumerate(X):
 			real_particle_batch = torch.Tensor(real_particle_batch)
 			N = real_particle_batch.shape[0] # This should be the batch size
@@ -408,8 +408,10 @@ if __name__ == "__main__":
 	_, X, Y = load_dataset("../unit_cell_data_16.csv", 0.2)
 	X = batch_dataset(X, args.batch_size)
 	num_batches = len(X)
+
+	args.num_epochs = 2000
 	
-	training_ratios = [(i, 1) for i in range(10, 1, -1)] + [(1, i) for i in range(1, 11)]
+	training_ratios = [(i, 1) for i in range(10, 1, -2)] + [(1, i) for i in range(0, 11, 2)]
 	print(training_ratios)
 	average_emittance = [None for x in range(len(training_ratios))]
 
@@ -417,7 +419,7 @@ if __name__ == "__main__":
 		print(str(i) + " of " + str(len(training_ratios)))
 		emittances_curr_iter = []
 
-		for j in range(1):
+		for j in range(5):
 
 			mpe = train(X, num_batches, ratio, set_args=args, model_name=args.loss_fn)
 			emittances_curr_iter.append(mpe)
