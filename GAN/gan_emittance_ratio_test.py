@@ -409,7 +409,7 @@ if __name__ == "__main__":
 	X = batch_dataset(X, args.batch_size)
 	num_batches = len(X)
 
-	args.num_epochs = 2000
+	args.num_epochs = 1
 	
 	training_ratios = [(i, 1) for i in range(10, 1, -2)] + [(1, i) for i in range(0, 11, 2)]
 	print(training_ratios)
@@ -418,7 +418,7 @@ if __name__ == "__main__":
 	for i, ratio in enumerate(training_ratios):
 		print(str(i) + " of " + str(len(training_ratios)))
 		emittances_curr_iter = []
-
+		
 		for j in range(5):
 
 			mpe = train(X, num_batches, ratio, set_args=args, model_name=args.loss_fn)
@@ -426,6 +426,6 @@ if __name__ == "__main__":
 		average_emittance[i] = torch.mean(torch.tensor(emittances_curr_iter)).item()
 		print(average_emittance)
 
-	with open("average_emittances.txt", "w+") as f:
-		f.write(str(average_emittance))
-		f.close()
+		with open("average_emittances.txt", "w+") as f:
+			f.write(str(average_emittance))
+			f.close()
