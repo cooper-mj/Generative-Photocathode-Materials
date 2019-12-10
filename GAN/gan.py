@@ -148,7 +148,7 @@ def knn_all_sample_particles(sample_particles, X_knn, Y_knn, k):
 	knn_for_sample_particles = []
 	inds_knn = []
 
-	for one_sample_particle in sample_particles[1:3]:
+	for one_sample_particle in sample_particles:
 		knn_for_sample_particle, inds = (knn(one_sample_particle, X_knn, k))
 		knn_for_sample_particles.append(knn_for_sample_particle) # return value
 		inds_knn.append(inds)
@@ -408,23 +408,23 @@ if __name__ == "__main__":
 	#      0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
 	#      0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000])
 	# Wasserstein/Non-saturating
-	features = torch.tensor([1.0471e+01, 1.0471e+01, 1.0471e+01, 1.3829e+01, 1.3829e+01, 1.3829e+01,
-	    5.7070e+01, 6.0000e+00, 5.7469e-01, 5.7469e-01, 5.7469e-01, 6.0000e+00,
-	    8.4165e-01, 8.4165e-01, 8.4165e-01, 6.0000e+00, 1.0864e-01, 1.0864e-01,
-	    1.0864e-01, 6.0000e+00, 2.4811e-02, 2.4811e-02, 2.4811e-02, 6.0000e+00,
-	    8.9136e-01, 8.9136e-01, 8.9136e-01, 6.0000e+00, 9.7519e-01, 9.7519e-01,
-	    9.7519e-01, 6.0000e+00, 4.2531e-01, 4.2531e-01, 4.2531e-01, 6.0000e+00,
-	    3.7484e-01, 3.7484e-01, 3.7484e-01, 6.0000e+00, 1.5835e-01, 1.5835e-01,
-	    1.5835e-01, 6.0000e+00, 6.2516e-01, 6.2516e-01, 6.2516e-01, 0.0000e+00,
-	    0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00,
-	    0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00,
-	    0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00,
-	    0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00])
-	get_particle_id_from_feature_tensor(features)
+	# features = torch.tensor([1.0471e+01, 1.0471e+01, 1.0471e+01, 1.3829e+01, 1.3829e+01, 1.3829e+01,
+	#     5.7070e+01, 6.0000e+00, 5.7469e-01, 5.7469e-01, 5.7469e-01, 6.0000e+00,
+	#     8.4165e-01, 8.4165e-01, 8.4165e-01, 6.0000e+00, 1.0864e-01, 1.0864e-01,
+	#     1.0864e-01, 6.0000e+00, 2.4811e-02, 2.4811e-02, 2.4811e-02, 6.0000e+00,
+	#     8.9136e-01, 8.9136e-01, 8.9136e-01, 6.0000e+00, 9.7519e-01, 9.7519e-01,
+	#     9.7519e-01, 6.0000e+00, 4.2531e-01, 4.2531e-01, 4.2531e-01, 6.0000e+00,
+	#     3.7484e-01, 3.7484e-01, 3.7484e-01, 6.0000e+00, 1.5835e-01, 1.5835e-01,
+	#     1.5835e-01, 6.0000e+00, 6.2516e-01, 6.2516e-01, 6.2516e-01, 0.0000e+00,
+	#     0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00,
+	#     0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00,
+	#     0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00,
+	#     0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00])
+	# get_particle_id_from_feature_tensor(features)
 
 
-	# _, X, Y = load_dataset("../unit_cell_data_16.csv", 0.2)
-	# X = batch_dataset(X, args.batch_size)
-	# num_batches = len(X)
-	#
-	# train(X, num_batches, set_args=args, model_name=args.loss_fn)
+	_, X, Y = load_dataset("../unit_cell_data_16.csv", 0.2)
+	X = batch_dataset(X, args.batch_size)
+	num_batches = len(X)
+
+	train(X, num_batches, set_args=args, model_name=args.loss_fn)
